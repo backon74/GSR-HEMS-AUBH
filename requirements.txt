@@ -1,0 +1,6 @@
+pandas
+openpyxl
+scikit-learn
+numpy
+matplotlib
+joblib
