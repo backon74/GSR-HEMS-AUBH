@@ -221,4 +221,4 @@ st.plotly_chart(fig_d, use_container_width=True)
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("🏆 **GSR Hackathon 2026 — Energy Track** &nbsp;|&nbsp; HEMS Data-Driven Demand Response &nbsp;|&nbsp; Noor · Hana · Hamza · Rim · Zainab")
+st.markdown("🏆 **GSR Hackathon 2026 — Energy Track** &nbsp;|&nbsp; HEMS Data-Driven Demand Response &nbsp;|&nbsp; Noor · Hana · Hamza · Zainab")
