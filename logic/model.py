@@ -12,7 +12,7 @@ def train_ac_predictor(df):
     y = df['ac_kwh']
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, shuffle=False  # shuffle=False keeps time order
+        X, y, test_size=0.2, shuffle=False  
     )
 
     model = RandomForestRegressor(n_estimators=100, random_state=42)
@@ -26,9 +26,9 @@ def train_ac_predictor(df):
     print("Saved: logic/ac_predictor.pkl")
     return model
 
-
 def train_peak_detector(df):
-    features = get_feature_columns()
+    features = [f for f in get_feature_columns() if f != 'hour']
+    
     X = df[features]
     y = df['is_peak']
 
@@ -46,7 +46,6 @@ def train_peak_detector(df):
     joblib.dump(model, 'logic/peak_detector.pkl')
     print("Saved: logic/peak_detector.pkl")
     return model
-
 
 def load_models():
     ac_model = joblib.load('logic/ac_predictor.pkl')
