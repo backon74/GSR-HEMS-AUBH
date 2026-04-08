@@ -53,12 +53,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ── Load & run full pipeline (cached) ────────────────────────────────────────
 @st.cache_data(show_spinner="Running pipeline…")
 def load_pipeline():
     df_raw = load_data('HEMS_Sample_Dataset.xlsx')
     df     = engineer_features(df_raw)
-    # Load pre-trained models (pipeline.py must have been run first)
     try:
         from logic.model import load_models
         load_models()   # just to verify they exist
@@ -73,7 +71,6 @@ def load_pipeline():
 df   = load_pipeline()
 kpis = get_control_summary(df)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("🏠 HEMS Control Panel")
 st.sidebar.markdown("**GSR Hackathon 2026 — Energy Track**")
 st.sidebar.markdown("---")
@@ -88,12 +85,10 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("**Strategy**")
 st.sidebar.markdown("🔵 **Pre-cool** — 2h before peak\n\n🔴 **Peak reduce** — 25% load cut\n\n🟠 **Comfort override** — dew point > 24°C")
 
-# ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("## 🏠 HEMS Smart A/C Optimization Dashboard")
 st.markdown("Predictive demand response for residential buildings — Eastern Province, Saudi Arabia")
 st.markdown("---")
 
-# ── KPI Cards ─────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-hdr">📊 Key Performance Indicators (30-Day)</div>', unsafe_allow_html=True)
 
 c1, c2, c3, c4, c5 = st.columns(5)
@@ -109,13 +104,11 @@ card(c5, f"{kpis['peak_hours_reduced']} hrs",  "Peak Hours Reduced")
 
 st.markdown("---")
 
-# ── Daily filter ──────────────────────────────────────────────────────────────
 day_df = df[
     (df['timestamp'].dt.date.astype(str) == sel_date) &
     (df['building_id'] == sel_bldg)
 ].sort_values('hour')
 
-# ── Before vs After chart ─────────────────────────────────────────────────────
 st.markdown('<div class="section-hdr">⚡ Before vs After — Hourly A/C Load</div>', unsafe_allow_html=True)
 
 fig = go.Figure()
@@ -131,7 +124,6 @@ fig.add_trace(go.Scatter(
     fill='tonexty', fillcolor='rgba(0,212,170,0.07)'
 ))
 
-# Shade peak hours red, pre-cool hours blue
 for _, r in day_df[day_df['predicted_peak'] == 1].iterrows():
     fig.add_vrect(x0=r['hour']-.45, x1=r['hour']+.45,
                   fillcolor='rgba(224,72,72,0.13)', line_width=0)
@@ -144,7 +136,6 @@ fig.update_layout(template='plotly_dark', height=370,
     legend=dict(orientation='h', y=1.08), margin=dict(l=40,r=20,t=10,b=40))
 st.plotly_chart(fig, use_container_width=True)
 
-# ── Row 2: comfort + mode pie ─────────────────────────────────────────────────
 col_l, col_r = st.columns(2)
 
 with col_l:
@@ -171,7 +162,6 @@ with col_r:
     fig_p.update_layout(template='plotly_dark', height=290, margin=dict(l=20,r=20,t=10,b=20))
     st.plotly_chart(fig_p, use_container_width=True)
 
-# ── Climate strip ─────────────────────────────────────────────────────────────
 st.markdown('<div class="section-hdr">🌡️ Climate — Temperature & Dew Point</div>', unsafe_allow_html=True)
 fig_cl = go.Figure()
 fig_cl.add_trace(go.Bar(x=day_df['hour'], y=day_df['temp'],
@@ -187,7 +177,6 @@ fig_cl.update_layout(template='plotly_dark', height=260,
     margin=dict(l=40,r=60,t=10,b=40))
 st.plotly_chart(fig_cl, use_container_width=True)
 
-# ── Hourly schedule table ─────────────────────────────────────────────────────
 st.markdown('<div class="section-hdr">📅 Optimized Hourly Schedule</div>', unsafe_allow_html=True)
 
 sched = build_daily_schedule(df, sel_date)
