@@ -129,15 +129,15 @@ card(c4, f"{kpis['total_saved_kwh']} kWh",    "Total kWh Saved", "blue")
 card(c5, f"{kpis['peak_hours_reduced']} hrs",  "Peak Hours Reduced", "red")
 
 # KPI Row 2: Cost & Water 
-st.markdown('<div class="section-hdr">💰 Cost Savings & 💧 Condensate Water Recovery</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Cost Savings & Condensate Water Recovery</div>', unsafe_allow_html=True)
 
 k1, k2, k3, k4, k5 = st.columns(5)
 
 card(k1, f"{cost_kpis['monthly_saved_sar']} SAR",    "Monthly Bill Saved",       "amber")
 card(k2, f"{cost_kpis['yearly_est_saved_sar']} SAR", "Projected Annual Savings",  "amber")
 card(k3, f"{cost_kpis['daily_avg_saved_sar']} SAR",  "Avg Daily Saving",          "amber")
-card(k4, f"{cond_kpis['daily_avg_litres']} L/day",   "💧 Condensate Recovered",   "water")
-card(k5, f"{cond_kpis['yearly_est_litres']:,.0f} L",  "💧 Yearly Water Yield",     "water")
+card(k4, f"{cond_kpis['daily_avg_litres']} L/day",   "Condensate Recovered",     "water")
+card(k5, f"{cond_kpis['yearly_est_litres']:,.0f} L",  "Yearly Water Yield",       "water")
 
 st.markdown("---")
 
@@ -177,7 +177,7 @@ st.plotly_chart(fig, use_container_width=True)
 col_l, col_r = st.columns(2)
 
 with col_l:
-    st.markdown('<div class="section-hdr">😊 Comfort Score (Hourly)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-hdr"> Comfort Score (Hourly)</div>', unsafe_allow_html=True)
     fig_c = go.Figure()
     fig_c.add_trace(go.Scatter(
         x=day_df['hour'], y=day_df['comfort_score'],
@@ -190,7 +190,7 @@ with col_l:
     st.plotly_chart(fig_c, use_container_width=True)
 
 with col_r:
-    st.markdown('<div class="section-hdr">🎛️ Control Mode Distribution</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-hdr"> Control Mode Distribution</div>', unsafe_allow_html=True)
     mode_cnt = day_df['control_mode'].value_counts().reset_index()
     mode_cnt.columns = ['Mode', 'Hours']
     color_map = {'normal':'#3a7d44','pre_cool':'#1a6cf5',
@@ -201,7 +201,7 @@ with col_r:
     st.plotly_chart(fig_p, use_container_width=True)
 
 # Climate chart 
-st.markdown('<div class="section-hdr">🌡️ Climate — Temperature & Dew Point</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Climate — Temperature & Dew Point</div>', unsafe_allow_html=True)
 fig_cl = go.Figure()
 fig_cl.add_trace(go.Bar(x=day_df['hour'], y=day_df['temp'],
     name='Outdoor Temp (°C)', marker_color='#e04848', opacity=0.65))
@@ -217,7 +217,7 @@ fig_cl.update_layout(template='plotly_dark', height=260,
 st.plotly_chart(fig_cl, use_container_width=True)
 
 # Condensate chart 
-st.markdown('<div class="section-hdr">💧 Condensate Water Recovery (Hourly)</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Condensate Water Recovery (Hourly)</div>', unsafe_allow_html=True)
 fig_w = go.Figure()
 fig_w.add_trace(go.Bar(
     x=day_df['hour'], y=day_df['condensate_baseline_L'],
@@ -234,7 +234,7 @@ fig_w.update_layout(template='plotly_dark', barmode='group', height=250,
 st.plotly_chart(fig_w, use_container_width=True)
 
 # Hourly cost savings chart 
-st.markdown('<div class="section-hdr">💰 Hourly Cost — Baseline vs Optimized (SAR)</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Hourly Cost — Baseline vs Optimized (SAR)</div>', unsafe_allow_html=True)
 fig_cost = go.Figure()
 fig_cost.add_trace(go.Scatter(
     x=day_df['hour'], y=day_df['cost_baseline_sar'],
@@ -253,7 +253,7 @@ fig_cost.update_layout(template='plotly_dark', height=250,
 st.plotly_chart(fig_cost, use_container_width=True)
 
 # Schedule table 
-st.markdown('<div class="section-hdr">📅 Optimized Hourly Schedule</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Optimized Hourly Schedule</div>', unsafe_allow_html=True)
 
 sched = build_daily_schedule(df, sel_date)
 sched = sched[sched['hour'].isin(day_df['hour'])]
@@ -272,7 +272,7 @@ styled = sched.rename(columns={
     'control_mode':'Mode','setpoint_adj':'Setpoint Adj °C',
     'comfort_score':'Comfort','predicted_peak':'Peak','pre_cool_window':'Pre-cool',
     'action':'Action'
-}).style.applymap(mode_color, subset=['Mode'])
+}).style.map(mode_color, subset=['Mode'])
 
 st.dataframe(styled, use_container_width=True, height=420)
 
@@ -299,7 +299,7 @@ st.plotly_chart(fig_d, use_container_width=True)
 
 # Scaling Impact Section 
 st.markdown("---")
-st.markdown('<div class="section-hdr">🌍 Scaling Impact — Eastern Province, Saudi Arabia</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Scaling Impact — Eastern Province, Saudi Arabia</div>', unsafe_allow_html=True)
 st.markdown("*If this system were deployed across all residential buildings in the Eastern Province:*")
 
 s1, s2, s3, s4 = st.columns(4)
