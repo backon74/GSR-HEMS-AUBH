@@ -22,7 +22,6 @@ from logic.scheduler import build_daily_schedule
 from logic.condensate import add_condensate_columns, get_condensate_summary
 from logic.cost_savings import add_cost_columns, get_cost_summary, get_scaling_summary
 
-# Page config 
 st.set_page_config(
     page_title="HEMS Smart A/C Dashboard",
     page_icon="🏠",
@@ -85,8 +84,7 @@ cost_kpis = get_cost_summary(df)
 cond_kpis = get_condensate_summary(df)
 scale     = get_scaling_summary(df)
 
-# ── Sidebar 
-st.sidebar.title("🏠 HEMS Control Panel")
+st.sidebar.title(" HEMS Control Panel")
 st.sidebar.markdown("**GSR Hackathon 2026 — Energy Track**")
 st.sidebar.markdown("---")
 
@@ -100,19 +98,13 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("**Strategy**")
 st.sidebar.markdown("🔵 **Pre-cool** — 2h before peak\n\n🔴 **Peak reduce** — 25% load cut\n\n🟠 **Comfort override** — dew point > 24°C")
 st.sidebar.markdown("---")
-st.sidebar.markdown("**💧 Condensate Reuse**")
+st.sidebar.markdown("** Condensate Reuse**")
 st.sidebar.markdown(f"Daily avg: **{cond_kpis['daily_avg_litres']} L/day**")
 st.sidebar.markdown(f"Yearly est: **{cond_kpis['yearly_est_litres']:,.0f} L/yr**")
 
-# Header
-st.markdown("## 🏠 HEMS Smart A/C Optimization Dashboard")
+st.markdown("##  HEMS Smart A/C Optimization Dashboard")
 st.markdown("Predictive demand response for residential buildings — Eastern Province, Saudi Arabia")
 st.markdown("---")
-
-# KPI Row 1: Energy & Comfort
-st.markdown('<div class="section-hdr">📊 Energy & Comfort KPIs (30-Day)</div>', unsafe_allow_html=True)
-
-c1, c2, c3, c4, c5 = st.columns(5)
 
 def card(col, val, label, color=""):
     col.markdown(
@@ -122,33 +114,32 @@ def card(col, val, label, color=""):
         unsafe_allow_html=True
     )
 
+st.markdown('<div class="section-hdr"> Key Performance Indicators (30-Day)</div>', unsafe_allow_html=True)
+
+c1, c2, c3, c4, c5 = st.columns(5)
 card(c1, f"{kpis['peak_reduction_pct']}%",    "Peak Load Reduction")
 card(c2, f"{kpis['energy_savings_pct']}%",    "Energy Savings")
 card(c3, f"{kpis['comfort_pct']}%",           "Comfort Maintained")
-card(c4, f"{kpis['total_saved_kwh']} kWh",    "Total kWh Saved", "blue")
-card(c5, f"{kpis['peak_hours_reduced']} hrs",  "Peak Hours Reduced", "red")
+card(c4, f"{kpis['total_saved_kwh']} kWh",    "Total kWh Saved")
+card(c5, f"{kpis['peak_hours_reduced']} hrs", "Peak Hours Reduced")
 
-# KPI Row 2: Cost & Water 
 st.markdown('<div class="section-hdr"> Cost Savings & Condensate Water Recovery</div>', unsafe_allow_html=True)
 
 k1, k2, k3, k4, k5 = st.columns(5)
-
-card(k1, f"{cost_kpis['monthly_saved_sar']} SAR",    "Monthly Bill Saved",       "amber")
-card(k2, f"{cost_kpis['yearly_est_saved_sar']} SAR", "Projected Annual Savings",  "amber")
-card(k3, f"{cost_kpis['daily_avg_saved_sar']} SAR",  "Avg Daily Saving",          "amber")
-card(k4, f"{cond_kpis['daily_avg_litres']} L/day",   "Condensate Recovered",     "water")
-card(k5, f"{cond_kpis['yearly_est_litres']:,.0f} L",  "Yearly Water Yield",       "water")
+card(k1, f"{cost_kpis['monthly_saved_sar']} SAR",         "Monthly Bill Saved",      "amber")
+card(k2, f"{cost_kpis['yearly_est_saved_sar']} SAR",      "Projected Annual Savings", "amber")
+card(k3, f"{cost_kpis['daily_avg_saved_sar']} SAR",       "Avg Daily Saving",         "amber")
+card(k4, f"{cond_kpis['daily_avg_litres']} L/day",        "Condensate Recovered",    "water")
+card(k5, f"{cond_kpis['yearly_est_litres']:,.0f} L",      "Yearly Water Yield",      "water")
 
 st.markdown("---")
 
-# Day filter
 day_df = df[
     (df['timestamp'].dt.date.astype(str) == sel_date) &
     (df['building_id'] == sel_bldg)
 ].sort_values('hour')
 
-# Before vs After chart 
-st.markdown('<div class="section-hdr">⚡ Before vs After — Hourly A/C Load</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> Before vs After — Hourly A/C Load</div>', unsafe_allow_html=True)
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(
@@ -173,7 +164,6 @@ fig.update_layout(template='plotly_dark', height=370,
     legend=dict(orientation='h', y=1.08), margin=dict(l=40,r=20,t=10,b=40))
 st.plotly_chart(fig, use_container_width=True)
 
-# Comfort + Control Mode
 col_l, col_r = st.columns(2)
 
 with col_l:
@@ -200,7 +190,6 @@ with col_r:
     fig_p.update_layout(template='plotly_dark', height=290, margin=dict(l=20,r=20,t=10,b=20))
     st.plotly_chart(fig_p, use_container_width=True)
 
-# Climate chart 
 st.markdown('<div class="section-hdr"> Climate — Temperature & Dew Point</div>', unsafe_allow_html=True)
 fig_cl = go.Figure()
 fig_cl.add_trace(go.Bar(x=day_df['hour'], y=day_df['temp'],
@@ -216,7 +205,6 @@ fig_cl.update_layout(template='plotly_dark', height=260,
     margin=dict(l=40,r=60,t=10,b=40))
 st.plotly_chart(fig_cl, use_container_width=True)
 
-# Condensate chart 
 st.markdown('<div class="section-hdr"> Condensate Water Recovery (Hourly)</div>', unsafe_allow_html=True)
 fig_w = go.Figure()
 fig_w.add_trace(go.Bar(
@@ -233,7 +221,6 @@ fig_w.update_layout(template='plotly_dark', barmode='group', height=250,
     margin=dict(l=40,r=20,t=10,b=40))
 st.plotly_chart(fig_w, use_container_width=True)
 
-# Hourly cost savings chart 
 st.markdown('<div class="section-hdr"> Hourly Cost — Baseline vs Optimized (SAR)</div>', unsafe_allow_html=True)
 fig_cost = go.Figure()
 fig_cost.add_trace(go.Scatter(
@@ -252,7 +239,6 @@ fig_cost.update_layout(template='plotly_dark', height=250,
     margin=dict(l=40,r=20,t=10,b=40))
 st.plotly_chart(fig_cost, use_container_width=True)
 
-# Schedule table 
 st.markdown('<div class="section-hdr"> Optimized Hourly Schedule</div>', unsafe_allow_html=True)
 
 sched = build_daily_schedule(df, sel_date)
@@ -276,8 +262,7 @@ styled = sched.rename(columns={
 
 st.dataframe(styled, use_container_width=True, height=420)
 
-# 30-day savings bar chart 
-st.markdown('<div class="section-hdr">📈 30-Day Daily Energy Savings</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-hdr"> 30-Day Daily Energy Savings</div>', unsafe_allow_html=True)
 
 daily = df.groupby(df['timestamp'].dt.date.astype(str)).agg(
     Baseline=('ac_kwh', 'sum'),
@@ -313,22 +298,21 @@ def scale_box(col, val, title, sub):
     )
 
 scale_box(s1, f"{scale['ep_gwh_saved_year']:,.1f} GWh",
-          "⚡ Energy Saved / Year",
+          " Energy Saved / Year",
           "Across 850,000 Eastern Province homes")
 scale_box(s2, f"{scale['ep_sar_saved_year_B']:.2f}B SAR",
-          "💰 Bill Savings / Year",
+          " Bill Savings / Year",
           "Total household savings, Eastern Province")
 scale_box(s3, f"{scale['ep_mw_peak_reduced']:,.0f} MW",
-          "🔌 Peak Demand Reduced",
+          " Peak Demand Reduced",
           "Grid stress relief during peak hours")
 scale_box(s4, f"{scale['ep_co2_saved_tonnes_year']:,.0f} t",
-          "🌱 CO₂ Avoided / Year",
-          f"At {0.64} kg CO₂/kWh (Saudi grid factor)")
+          " CO₂ Avoided / Year",
+          f"At 0.64 kg CO₂/kWh (Saudi grid factor)")
 
-# Neighbourhood scale
 st.markdown(f"""
 <div style='background:#1a1a2e; border-radius:10px; padding:14px 20px; margin-top:10px; border:1px solid #2a2a4a;'>
-  <span style='color:#aaa; font-size:0.85rem;'>📍 Neighbourhood level (500 homes): </span>
+  <span style='color:#aaa; font-size:0.85rem;'> Neighbourhood level (500 homes): </span>
   <span style='color:#c084fc; font-weight:600;'>{scale['hood_kwh_saved_day']:,.0f} kWh/day saved</span>
   <span style='color:#888;'> · </span>
   <span style='color:#c084fc; font-weight:600;'>{scale['hood_sar_saved_day']:,.0f} SAR/day</span>
@@ -337,6 +321,5 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-#  Footer 
 st.markdown("---")
-st.markdown("🏆 **GSR Hackathon 2026 — Energy Track** &nbsp;|&nbsp; HEMS Data-Driven Demand Response &nbsp;|&nbsp; Noor · Hana · Hamza · Zainab")
+st.markdown(" **GSR Hackathon 2026 — Energy Track** &nbsp;|&nbsp; HEMS Data-Driven Demand Response &nbsp;|&nbsp; Noor · Hana · Hamza · Zainab")

@@ -1,6 +1,3 @@
-"""
-Rim's condensate water estimation module.
-"""
 
 import pandas as pd
 import numpy as np
