@@ -1,24 +1,9 @@
-"""
-Saudi Arabia residential electricity tariff (SEC — Saudi Electricity Company):
-  - Slab 1:   0–6,000 kWh/month  →  0.18 SAR/kWh
-  - Slab 2:   6,001–10,000 kWh   →  0.20 SAR/kWh
-  - Slab 3:   >10,000 kWh        →  0.30 SAR/kWh
-
-Peak-hour penalty (simulated TOU — what DR programs would charge):
-  - Peak hours (12:00–18:00):    0.30 SAR/kWh
-  - Off-peak:                    0.18 SAR/kWh
-
-We use TOU pricing to show the *potential* savings when Saudi implements
-demand-response tariffs (aligns with Vision 2030 smart grid goals).
-"""
 
 import pandas as pd
 
-# ── Saudi SEC tariff constants ─────────────────────────────────────────────────
 TARIFF_OFFPEAK_SAR  = 0.18   # SAR per kWh — standard residential
 TARIFF_PEAK_SAR     = 0.30   # SAR per kWh — peak TOU (projected DR rate)
 
-# ── Scaling constants for Eastern Province ────────────────────────────────────
 EP_RESIDENTIAL_HOMES    = 850_000   # Eastern Province residential units (~2023 census)
 AVG_HOMES_PER_HOOD      = 500       # typical neighbourhood size
 CO2_KG_PER_KWH          = 0.64      # Saudi grid emission factor (IEA 2023)
@@ -27,9 +12,7 @@ CO2_KG_PER_KWH          = 0.64      # Saudi grid emission factor (IEA 2023)
 def _hourly_tariff(is_peak: int) -> float:
     return TARIFF_PEAK_SAR if is_peak else TARIFF_OFFPEAK_SAR
 
-
 def add_cost_columns(df: pd.DataFrame) -> pd.DataFrame:
-    #Adds per-hour cost columns (SAR) for baseline and optimized loads.
 
     df = df.copy()
     df['tariff_sar']        = df['predicted_peak'].apply(_hourly_tariff)
@@ -40,7 +23,6 @@ def add_cost_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_cost_summary(df: pd.DataFrame) -> dict:
-    #Returns cost KPIs for dashboard display.
     
     if 'cost_saved_sar' not in df.columns:
         df = add_cost_columns(df)
@@ -68,35 +50,29 @@ def get_scaling_summary(df: pd.DataFrame) -> dict:
     saved_kwh_day  = (df['ac_kwh'] - df['optimized_ac_kwh']).clip(lower=0).sum() / n_days
     saved_sar_day  = df['cost_saved_sar'].sum() / n_days
 
-    # Peak demand reduction
     peak_df        = df[df['predicted_peak'] == 1]
     peak_baseline  = peak_df['ac_kwh'].mean()
     peak_optimized = peak_df['optimized_ac_kwh'].mean()
     peak_kw_saved_per_home = (peak_baseline - peak_optimized)  # kW average during peak
 
-    # Neighbourhood (500 homes)
     hood_kwh_day   = saved_kwh_day  * AVG_HOMES_PER_HOOD
     hood_sar_day   = saved_sar_day  * AVG_HOMES_PER_HOOD
     hood_mw_peak   = peak_kw_saved_per_home * AVG_HOMES_PER_HOOD / 1000
 
-    # Eastern Province (850k homes)
     ep_kwh_year    = saved_kwh_day  * EP_RESIDENTIAL_HOMES * 365
     ep_sar_year    = saved_sar_day  * EP_RESIDENTIAL_HOMES * 365
     ep_mw_peak     = peak_kw_saved_per_home * EP_RESIDENTIAL_HOMES / 1000
     ep_co2_year_t  = ep_kwh_year    * CO2_KG_PER_KWH / 1000   # tonnes
 
     return {
-        # Per home
         'per_home_kwh_saved_day':   round(saved_kwh_day, 2),
         'per_home_sar_saved_day':   round(saved_sar_day, 2),
         'per_home_sar_saved_year':  round(saved_sar_day * 365, 0),
 
-        # Neighbourhood
         'hood_kwh_saved_day':       round(hood_kwh_day, 1),
         'hood_sar_saved_day':       round(hood_sar_day, 1),
         'hood_mw_peak_reduced':     round(hood_mw_peak, 3),
 
-        # Eastern Province
         'ep_gwh_saved_year':        round(ep_kwh_year / 1_000_000, 1),
         'ep_sar_saved_year_B':      round(ep_sar_year / 1_000_000_000, 2),   # billions
         'ep_mw_peak_reduced':       round(ep_mw_peak, 0),
