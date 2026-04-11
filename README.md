@@ -15,7 +15,7 @@ streamlit run app.py
 
 ## Hardware Prototype
 ESP32 + DHT22 + LCD running identical control logic — simulated in Wokwi.
-▶️ [Open in Wokwi](https://wokwi.com/projects/460958709518064641)
+[Open in Wokwi](https://wokwi.com/projects/460958709518064641)
 
 ## Team
 Noor Al-Abdrabalnabi · Hana Wahban · Hamza Alkhaldi · Zainab Alnassir
