@@ -21,7 +21,6 @@ https://github.com/user-attachments/assets/2500ed41-5113-4c2d-bf1b-20d328dac2fd
 
 ## Dashboard 
 
-https://github.com/user-attachments/assets/67a12a71-1002-4ddd-9f94-fb1d9739a558
 
 ## Team
 Noor Al-Abdrabalnabi · Hana Wahban · Hamza Alkhaldi · Zainab Alnassir
