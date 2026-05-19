@@ -21,4 +21,3 @@ ESP32 + DHT22 + LCD running identical control logic — simulated in Wokwi.
 Noor Al-Abdrabalnabi · Hana Wahban · Hamza Alkhaldi · Zainab Alnassir
 American University of Bahrain (AUBH)
 
-<img width="770" height="421" alt="image" src="https://github.com/user-attachments/assets/4508f0f9-4d39-42e9-b2ac-fdf30a27c923" />
