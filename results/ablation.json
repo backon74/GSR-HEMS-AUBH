@@ -1,0 +1,127 @@
+{
+  "data_source": "synthetic_sample",
+  "test_days": [
+    "2025-07-23",
+    "2025-07-24",
+    "2025-07-25",
+    "2025-07-26",
+    "2025-07-27",
+    "2025-07-28",
+    "2025-07-29",
+    "2025-07-30"
+  ],
+  "forecast_metrics": {
+    "n_test_hours": 192,
+    "test_days": 8,
+    "rf": {
+      "mae_kwh": 0.1872,
+      "r2": 0.9282
+    },
+    "naive_same_hour_yesterday": {
+      "mae_kwh": 0.2259,
+      "r2": 0.8928
+    },
+    "naive_hour_of_day_mean": {
+      "mae_kwh": 0.208,
+      "r2": 0.9122
+    },
+    "rf_beats_best_naive_mae": true
+  },
+  "verdict": "RF forecast beats the best naive baseline on test MAE. Planning outcome check: peak cut differs by 0.05 pp between RF and naive forecasts (nominal), so forecast quality changes the plan little on this data; the planner and indoor gate, not the forecaster, produce the savings.",
+  "rf_beats_naive": true,
+  "detected_window": {
+    "oracle": {
+      "mean_jaccard_with_tariff_12_18": 0.529,
+      "mean_window_hours": 4.12
+    },
+    "rf": {
+      "mean_jaccard_with_tariff_12_18": 0.641,
+      "mean_window_hours": 5.5
+    },
+    "naive": {
+      "mean_jaccard_with_tariff_12_18": 0.471,
+      "mean_window_hours": 3.5
+    }
+  },
+  "planning_ablation": {
+    "oracle": {
+      "nominal": {
+        "peak_reduction_pct": 52.95,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.494,
+        "energy_change_pct": -3.77
+      },
+      "heatwave_1.10": {
+        "peak_reduction_pct": 52.94,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.63,
+        "energy_change_pct": -4.99
+      },
+      "heatwave_1.25": {
+        "peak_reduction_pct": 52.94,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.864,
+        "energy_change_pct": -6.65
+      }
+    },
+    "rf": {
+      "nominal": {
+        "peak_reduction_pct": 54.23,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.679,
+        "energy_change_pct": -5.72
+      },
+      "heatwave_1.10": {
+        "peak_reduction_pct": 54.23,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.829,
+        "energy_change_pct": -6.9
+      },
+      "heatwave_1.25": {
+        "peak_reduction_pct": 52.36,
+        "hours_above_limit": 0,
+        "override_hours": 2,
+        "max_indoor_c": 25.962,
+        "energy_change_pct": -7.98
+      }
+    },
+    "naive": {
+      "nominal": {
+        "peak_reduction_pct": 54.28,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.679,
+        "energy_change_pct": -4.95
+      },
+      "heatwave_1.10": {
+        "peak_reduction_pct": 54.27,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 25.829,
+        "energy_change_pct": -6.16
+      },
+      "heatwave_1.25": {
+        "peak_reduction_pct": 52.41,
+        "hours_above_limit": 0,
+        "override_hours": 2,
+        "max_indoor_c": 25.962,
+        "energy_change_pct": -7.29
+      }
+    },
+    "legacy_fixed_window_rf": {
+      "nominal": {
+        "peak_reduction_pct": 25.0,
+        "hours_above_limit": 0,
+        "override_hours": 0,
+        "max_indoor_c": 24.899,
+        "energy_change_pct": -8.27
+      }
+    }
+  },
+  "note": "Weather forecast assumed equal to actual. Train days are in-sample for headline schedule; ablation uses test days only."
+}

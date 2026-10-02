@@ -28,10 +28,10 @@ def add_condensate_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     df['condensate_baseline_L'] = df.apply(
-        lambda r: estimate_condensate(r['ac_kwh'], r['humidity'], r['dew_point']), axis=1
+        lambda r: estimate_condensate(r['ac_kwh'], r['humidity'], r['temp']), axis=1
     )
     df['condensate_optimized_L'] = df.apply(
-        lambda r: estimate_condensate(r['optimized_ac_kwh'], r['humidity'], r['dew_point']), axis=1
+        lambda r: estimate_condensate(r['optimized_ac_kwh'], r['humidity'], r['temp']), axis=1
     )
     df['condensate_total_L'] = df['condensate_optimized_L']
 
