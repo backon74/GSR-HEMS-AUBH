@@ -1,0 +1,213 @@
+{
+  "data_source": "synthetic_sample",
+  "provenance": {
+    "data_source": "synthetic_sample",
+    "phase_shift_h": 12,
+    "rows": 720,
+    "buildings": 1,
+    "file": "HEMS_Sample_Dataset.xlsx",
+    "indoor_profile": "assumed"
+  },
+  "scope": {
+    "days": 29,
+    "hours": 696,
+    "profile": "typical",
+    "planner": "grid",
+    "plan_basis": "rf (train days are in-sample, see forecast block)",
+    "type": "simulation on synthetic sample; indoor temperature is modelled"
+  },
+  "headline": {
+    "peak_reduction_pct": 49.17,
+    "energy_change_pct_closed_loop": -4.52,
+    "comfort_pct_indoor_modelled": 100.0
+  },
+  "days": 29,
+  "peak_reduction_pct": 49.17,
+  "peak_kw_reduction_avg": 1.1445,
+  "energy_change_pct": -4.52,
+  "energy_change_open_loop_pct": -13.93,
+  "kwh_baseline_per_day": 27.121,
+  "kwh_optimized_per_day": 25.896,
+  "kwh_recovery_per_day": 2.554,
+  "comfort_pct": 100.0,
+  "max_indoor_c": 25.679,
+  "hours_above_limit": 0,
+  "override_hours": 0,
+  "mean_rise_at_peak_end_c": 1.485,
+  "sar_saved_per_day_tou": 1.1819,
+  "sar_saved_per_year_tou": 431.38,
+  "sar_saved_per_day_flat": 0.2205,
+  "sar_saved_per_year_flat": 80.48,
+  "baseline_comfort_note": "Baseline comfort is 100% by construction (baseline assumed to hold T_SET). Report SmartCool indoor excursions, not \"100% comfort maintained\".",
+  "override_hours_by_reason": {
+    "none": 696
+  },
+  "mode_counts": {
+    "normal": 401,
+    "peak_reduce": 203,
+    "pre_cool": 92
+  },
+  "cost_sar": {
+    "per_day_tou": {
+      "baseline": 6.837,
+      "optimized": 5.655
+    },
+    "per_day_flat": {
+      "baseline": 4.882,
+      "optimized": 4.661
+    },
+    "saved_per_year_tou": 431.38,
+    "saved_per_year_flat": 80.48,
+    "annualisation_days": 365,
+    "flat_tariff_note": "Under today's flat 0.18 SAR/kWh the load shift itself saves nothing; only net kWh does."
+  },
+  "co2_kg": {
+    "saved_per_day": 0.784,
+    "saved_per_year": 286.2,
+    "factor_kg_per_kwh": 0.64
+  },
+  "condensate_L_day": {
+    "baseline": 15.44,
+    "optimized": 14.29,
+    "note": "Formula unconfirmed (I9 bug fixed: temp not dew point passed). Order of magnitude only."
+  },
+  "payback_months": {
+    "device_cost_sar": 200.0,
+    "device_cost_range_sar": [
+      200.0,
+      500.0
+    ],
+    "tou": 5.6,
+    "flat": 29.8,
+    "tou_at_cost_range": [
+      5.6,
+      13.9
+    ],
+    "flat_at_cost_range": [
+      29.8,
+      74.6
+    ],
+    "note": "Computed from our savings; device cost is an assumption."
+  },
+  "scaling": {
+    "one_home": {
+      "kwh_saved_per_day": 1.225,
+      "peak_kw_reduced": 1.1445
+    },
+    "neighbourhood_500_homes": {
+      "kwh_saved_per_day": 612.5,
+      "peak_mw_reduced": 0.572,
+      "sar_per_year_tou": 215690.0,
+      "sar_per_year_flat": 40240.0
+    },
+    "eastern_province_tou": {
+      "10pct": {
+        "homes": 85000,
+        "sar_per_year_million": 36.7,
+        "gwh_per_year": 38.0,
+        "peak_mw_reduced": 97.0,
+        "co2_tonnes_per_year": 24324.0
+      },
+      "30pct": {
+        "homes": 255000,
+        "sar_per_year_million": 110.0,
+        "gwh_per_year": 114.0,
+        "peak_mw_reduced": 292.0,
+        "co2_tonnes_per_year": 72971.0
+      },
+      "50pct": {
+        "homes": 425000,
+        "sar_per_year_million": 183.3,
+        "gwh_per_year": 190.0,
+        "peak_mw_reduced": 486.0,
+        "co2_tonnes_per_year": 121618.0
+      }
+    },
+    "eastern_province_flat": {
+      "10pct": {
+        "homes": 85000,
+        "sar_per_year_million": 6.8,
+        "gwh_per_year": 38.0,
+        "peak_mw_reduced": 97.0,
+        "co2_tonnes_per_year": 24324.0
+      },
+      "30pct": {
+        "homes": 255000,
+        "sar_per_year_million": 20.5,
+        "gwh_per_year": 114.0,
+        "peak_mw_reduced": 292.0,
+        "co2_tonnes_per_year": 72971.0
+      },
+      "50pct": {
+        "homes": 425000,
+        "sar_per_year_million": 34.2,
+        "gwh_per_year": 190.0,
+        "peak_mw_reduced": 486.0,
+        "co2_tonnes_per_year": 121618.0
+      }
+    },
+    "ep_residential_homes": 850000,
+    "ep_residential_homes_status": "UNRESOLVED assumption: code 850,000 vs deck 1.5M; needs citation",
+    "note": "Adoption-scaled scenarios, not forecasts. Peak MW assumes all adopters peak together."
+  },
+  "forecast": {
+    "metrics_test_days": {
+      "n_test_hours": 192,
+      "test_days": 8,
+      "rf": {
+        "mae_kwh": 0.1872,
+        "r2": 0.9282
+      },
+      "naive_same_hour_yesterday": {
+        "mae_kwh": 0.2259,
+        "r2": 0.8928
+      },
+      "naive_hour_of_day_mean": {
+        "mae_kwh": 0.208,
+        "r2": 0.9122
+      },
+      "rf_beats_best_naive_mae": true
+    },
+    "train_days": 21,
+    "test_days": 8,
+    "note": "Headline schedule uses RF day-ahead forecasts (outdoor features); train days are in-sample. Ablation uses test days only. Indoor comfort is physics-modelled; DHT is live/calibration only."
+  },
+  "sensitivity_range": {
+    "grid": "profile {tight,typical,leaky} x rise limit {1.0,1.5,2.0} x K_REC {0.25,0.5,1.0}",
+    "cells": 27,
+    "metrics": {
+      "peak_cut_pct": {
+        "typical": 49.17,
+        "min": 32.07,
+        "max": 59.29
+      },
+      "energy_change_pct": {
+        "typical": -4.52,
+        "min": -20.8,
+        "max": 3.75
+      },
+      "hours_above_limit": {
+        "typical": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "override_hours": {
+        "typical": 0.0,
+        "min": 0.0,
+        "max": 10.0
+      },
+      "sar_per_year_tou": {
+        "typical": 431.38,
+        "min": 194.85,
+        "max": 766.38
+      },
+      "sar_per_year_flat": {
+        "typical": 80.48,
+        "min": -66.77,
+        "max": 370.61
+      }
+    }
+  },
+  "days_at_cut_ceiling": 5,
+  "indoor_profile_label": "assumed"
+}

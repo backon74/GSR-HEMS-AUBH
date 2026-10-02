@@ -1,12 +1,10 @@
 
 import pandas as pd
 
-TARIFF_OFFPEAK_SAR  = 0.18   # SAR per kWh — standard residential
-TARIFF_PEAK_SAR     = 0.30   # SAR per kWh — peak TOU (projected DR rate)
-
-EP_RESIDENTIAL_HOMES    = 850_000   # Eastern Province residential units (~2023 census)
-AVG_HOMES_PER_HOOD      = 500       # typical neighbourhood size
-CO2_KG_PER_KWH          = 0.64      # Saudi grid emission factor (IEA 2023)
+# DEPRECATED: legacy helpers for dashboard/app.py. Constants now come from config.py; the numbers that are
+# quoted come from evaluation/metrics.py via results/kpis.json (closed-loop, signed, adoption-scaled).
+from config import (TARIFF_OFFPEAK_SAR, TARIFF_PEAK_SAR, EP_RESIDENTIAL_HOMES,  # noqa: F401
+                    AVG_HOMES_PER_HOOD, CO2_KG_PER_KWH)
 
 
 def _hourly_tariff(is_peak: int) -> float:

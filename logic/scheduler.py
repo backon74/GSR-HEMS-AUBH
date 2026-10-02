@@ -1,4 +1,6 @@
 """
+DEPRECATED: replaced by data/processed/optimized_schedule.csv written by pipeline.py (logic/engine.py output).
+
 logic/scheduler.py
 ===================
 Hamza's optimized A/C scheduling system.

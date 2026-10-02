@@ -1,4 +1,7 @@
 """
+DEPRECATED (kept for the legacy dashboard/app.py): open-loop, outdoor-gated rules. The decision engine is
+logic/engine.py (indoor-gated, closed-loop). Do not quote numbers from this module.
+
 logic/control_logic.py
 ========================
 Hamza's smart A/C control logic.
