@@ -90,13 +90,8 @@ python bridge/serial_bridge.py --port /dev/cu.usbserial-0001   # start before bo
 
 The bridge publishes each packet to `data/processed/live_telemetry.json` (+ `live_history.jsonl`) and the console fills in. With no board attached the measured tiles stay empty by design and read `waiting for the board`; "Replay the planned day" walks the schedule so the plan section still moves, and `python tools/fake_device_feed.py` emits stand-in DHT packets through the same path for console work (never used by the pipeline or the model).
 
-https://github.com/user-attachments/assets/895f52ad-5ef7-4272-af1a-7fa0557637e7
-
 ## Own-data calibration kit
 `tools/log_indoor.py` logs an indoor DHT11 (+ outdoor reading) every 5 min; `tools/fit_tau.py` fits the building time constant from A/C-off decays of at least 2 C. Write the physics override with `python tools/fit_tau.py data/own_log.csv --write-override`, then re-run `python pipeline.py`. Fitted tau replaces the assumed house profile for the indoor model only (dashboard/KPI label "own-measured"); the day-ahead RF still uses outdoor weather. Live DHT on the ESP32 is for local OVERRIDE / sensor_fail, not ML training.
-
-## Team and module ownership
-Inferred from the original module docstrings; confirm and edit.
 
 | Member | Modules |
 |---|---|
