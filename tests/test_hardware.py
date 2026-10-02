@@ -11,6 +11,15 @@ from bridge import serial_bridge
 from evaluation import exports
 
 
+def test_contract_documents_temperature_roles():
+    txt = exports.contract_text()
+    assert 'Temperature roles' in txt
+    assert 'outdoor' in txt.lower()
+    assert 'modelled' in txt.lower()
+    assert 'DHT11' in txt
+    assert 'RF' in txt or 'day-ahead' in txt.lower()
+
+
 def test_maps_cover_all_modes():
     for m in config.MODES:
         assert m in config.MODE_TOKEN and m in config.MODE_LED and m in config.FAN_PWM and m in config.MODE_LCD

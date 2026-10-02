@@ -63,7 +63,7 @@ https://github.com/user-attachments/assets/2500ed41-5113-4c2d-bf1b-20d328dac2fd
 https://github.com/user-attachments/assets/895f52ad-5ef7-4272-af1a-7fa0557637e7
 
 ## Own-data calibration kit
-`tools/log_indoor.py` logs an indoor DHT11 (+ outdoor reading) every 5 min; `tools/fit_tau.py` fits the building time constant from A/C-off decays of at least 2 C. Fitted values replace the assumed profile and the dashboard labels them "own-measured".
+`tools/log_indoor.py` logs an indoor DHT11 (+ outdoor reading) every 5 min; `tools/fit_tau.py` fits the building time constant from A/C-off decays of at least 2 C. Write the physics override with `python tools/fit_tau.py data/own_log.csv --write-override`, then re-run `python pipeline.py`. Fitted tau replaces the assumed house profile for the indoor model only (dashboard/KPI label "own-measured"); the day-ahead RF still uses outdoor weather. Live DHT on the ESP32 is for local OVERRIDE / sensor_fail, not ML training.
 
 ## Team and module ownership
 Inferred from the original module docstrings; confirm and edit.

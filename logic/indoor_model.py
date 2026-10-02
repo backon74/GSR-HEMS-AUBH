@@ -6,16 +6,43 @@ Only the change in A/C energy moves indoor temperature:
     D[t+1] = a*D[t] + g*tau*(1-a)*(base[t] - opt[t])
     T_in[t] = T_SET + D[t]
 Exact discretisation for a load held constant over each hour.
+
+Optional DHT calibration: if config.PROFILE_OVERRIDE_PATH exists (from tools/fit_tau.py
+--write-override), tau/g from that file replace the assumed HOUSE_PROFILES entry. That
+improves this physics layer only — it does not change ML forecast FEATURES.
 """
+import json
+import os
+
 import numpy as np
 import pandas as pd
 
 import config
 
 
+def load_profile_override(path=None):
+    """Return override dict or None. Keys: tau, g (optional), c_th (optional), data_source, label."""
+    path = path or config.PROFILE_OVERRIDE_PATH
+    if not os.path.isfile(path):
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
 def get_params(profile=None, **overrides):
-    p = dict(config.HOUSE_PROFILES[profile or config.DEFAULT_PROFILE])
-    p.update({"t_set": config.T_SET, "k_rec": config.K_REC, "dt": config.DT_H})
+    name = profile or config.DEFAULT_PROFILE
+    p = dict(config.HOUSE_PROFILES[name])
+    p.update({"t_set": config.T_SET, "k_rec": config.K_REC, "dt": config.DT_H,
+              "profile": name, "profile_label": "assumed"})
+    ov = load_profile_override()
+    if ov and ov.get('tau') is not None:
+        p['tau'] = float(ov['tau'])
+        if ov.get('g') is not None:
+            p['g'] = float(ov['g'])
+        if ov.get('c_th') is not None:
+            p['c_th'] = float(ov['c_th'])
+        p['profile_label'] = ov.get('label', 'own-measured')
+        p['data_source'] = ov.get('data_source', 'own_logger')
     p.update(overrides)
     return p
 

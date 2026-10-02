@@ -131,6 +131,12 @@ def contract_text():
           f'- NaN / failed read: override, fan 100%. BOOT button (GPIO{config.GPIO_BOOT}) forces the same override.',
           f"- +{config.LIVE_RH_DELTA} %RH is a demo-scaled stand-in for the real dew-point rule; label it on screen and slide.",
           f"- Dew point: Magnus, a = {config.MAGNUS_A}, b = {config.MAGNUS_B} (`firmware/magnus.h`, same constants as Python).",
+          '', '## Temperature roles (laptop vs DHT)', '',
+          '- Day-ahead RF on the laptop uses **outdoor** weather from the hourly dataset; it does not run on the ESP32.',
+          '- Comfort planning uses **modelled** indoor temperature (`indoor_temp_est_c`); steady red = model override.',
+          '- On-device DHT11 is **live room** sensing for local OVERRIDE / sensor_fail only. Optional offline tau fit '
+          '(`tools/log_indoor.py` + `tools/fit_tau.py --write-override`) calibrates physics, not the RF.',
+          '- Fan is an A/C stand-in: decision logic demo, not thermal physics.',
           '', '## GPIO', '', '| Signal | GPIO |', '|---|---|']
     for k, v in config.LED_GPIO.items():
         L.append(f"| LED {k} | {v} |")

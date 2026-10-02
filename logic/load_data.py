@@ -49,6 +49,17 @@ def _find_organizer_file():
     return files[0] if files else None
 
 
+def _require_hourly_cols(df, path):
+    """Outdoor climate + A/C load are required. Indoor is modelled later, not loaded here."""
+    missing = [c for c in config.REQUIRED_HOURLY_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Hourly dataset {os.path.basename(str(path))} missing required columns {missing}. "
+            f"Need outdoor weather + ac_kwh after rename ({list(config.REQUIRED_HOURLY_COLS)}). "
+            "Indoor temperature is not an input column; it is modelled in logic/indoor_model.py."
+        )
+
+
 def load_data(filepath=None, verbose=True):
     organizer = None if filepath else _find_organizer_file()
     if organizer:
@@ -64,6 +75,9 @@ def load_data(filepath=None, verbose=True):
     df = df.rename(columns=_RENAME)
     if source == 'organizer':
         df = df.rename(columns={k: v for k, v in _ORGANIZER_SYNONYMS.items() if k in df.columns and v not in df.columns})
+    if 'timestamp' not in df.columns and 'date' in df.columns and 'hour' in df.columns:
+        df['timestamp'] = pd.to_datetime(df['date']) + pd.to_timedelta(df['hour'].astype(int), unit='h')
+    _require_hourly_cols(df, path)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values('timestamp').reset_index(drop=True)
     if 'date' not in df.columns:
@@ -88,9 +102,16 @@ def load_data(filepath=None, verbose=True):
 
 
 def load_indoor_log(path):
-    """Team's own DHT11 CSV (P1). Columns: timestamp, indoor_temp_c, indoor_rh_pct, outdoor_temp_c, ac_state(0/1)."""
+    """Team's own DHT11 CSV (P1). Columns: timestamp, indoor_temp_c, indoor_rh_pct, outdoor_temp_c, ac_state(0/1).
+
+    Used only for physics calibration (fit_tau), never as day-ahead RF features.
+    """
     df = pd.read_csv(path)
     df.columns = [c.strip().lower() for c in df.columns]
+    need = ('timestamp', 'indoor_temp_c', 'outdoor_temp_c', 'ac_state')
+    missing = [c for c in need if c not in df.columns]
+    if missing:
+        raise ValueError(f"Indoor DHT log missing {missing}; expected {list(need)}")
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values('timestamp').reset_index(drop=True)
     df['data_source'] = 'own_logger'

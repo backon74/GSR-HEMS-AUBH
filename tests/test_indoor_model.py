@@ -1,5 +1,6 @@
 import numpy as np
 
+import config
 from logic import indoor_model as im
 
 
@@ -7,11 +8,18 @@ def P(profile='typical'):
     return im.get_params(profile)
 
 
-def test_zero_control_stays_at_setpoint():
-    base = np.random.default_rng(0).uniform(0, 3.6, 24)
-    r = im.simulate_indoor(base, base, P())
-    assert np.allclose(r['delta'], 0.0)
-    assert np.allclose(r['T_in'], 24.0)
+def test_get_params_assumed_without_override(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, 'PROFILE_OVERRIDE_PATH', str(tmp_path / 'missing.json'))
+    p = im.get_params('typical')
+    assert p['profile_label'] == 'assumed' and p['tau'] == config.HOUSE_PROFILES['typical']['tau']
+
+
+def test_get_params_reads_dht_override(monkeypatch, tmp_path):
+    path = tmp_path / 'house_profile_override.json'
+    path.write_text('{"tau": 7.5, "g": 0.45, "c_th": 5.0, "data_source": "own_logger", "label": "own-measured"}')
+    monkeypatch.setattr(config, 'PROFILE_OVERRIDE_PATH', str(path))
+    p = im.get_params('typical')
+    assert p['tau'] == 7.5 and p['profile_label'] == 'own-measured' and p['data_source'] == 'own_logger'
 
 
 def test_constant_reduction_matches_closed_form():

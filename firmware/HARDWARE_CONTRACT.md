@@ -41,6 +41,13 @@ Fallback: if no command arrives for a few seconds, the firmware runs the generat
 - +15 %RH is a demo-scaled stand-in for the real dew-point rule; label it on screen and slide.
 - Dew point: Magnus, a = 17.62, b = 243.12 (`firmware/magnus.h`, same constants as Python).
 
+## Temperature roles (laptop vs DHT)
+
+- Day-ahead RF on the laptop uses **outdoor** weather from the hourly dataset; it does not run on the ESP32.
+- Comfort planning uses **modelled** indoor temperature (`indoor_temp_est_c`); steady red = model override.
+- On-device DHT11 is **live room** sensing for local OVERRIDE / sensor_fail only. Optional offline tau fit (`tools/log_indoor.py` + `tools/fit_tau.py --write-override`) calibrates physics, not the RF.
+- Fan is an A/C stand-in: decision logic demo, not thermal physics.
+
 ## GPIO
 
 | Signal | GPIO |

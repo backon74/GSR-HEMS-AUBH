@@ -1,4 +1,11 @@
-"""Day-ahead A/C load forecaster (7.6). No lag shorter than 24 h. Weather forecast assumed equal to actual."""
+"""Day-ahead A/C load forecaster (7.6). No lag shorter than 24 h. Weather forecast assumed equal to actual.
+
+Temperature contract (do not mix these layers):
+- Features use OUTDOOR weather only (`temp` = outdoor dry-bulb from the hourly dataset).
+- Indoor temperature is NEVER a feature or training target here; comfort uses logic/indoor_model.py.
+- Live DHT11 readings on the ESP32 are for device-side override / optional tau calibration only —
+  they must not be piped into FEATURES or train_forecaster.
+"""
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
@@ -6,8 +13,10 @@ from sklearn.metrics import mean_absolute_error, r2_score
 
 import config
 
+# Outdoor climate + long A/C history only. Forbidden: indoor_temp*, DHT telemetry, modelled T_in.
 FEATURES = ['hour', 'day_of_week', 'is_weekend', 'temp', 'humidity', 'dew_point', 'solar',
             'ac_lag_24h', 'prev_day_mean', 'prev_day_max']
+FORBIDDEN_FEATURE_SUBSTR = ('indoor_temp', 'indoor_rh', 't_in', 'dht')
 
 
 def build_forecast_features(df):

@@ -1,6 +1,12 @@
 """Single source of truth for every constant. Other modules import from here.
 
 Evidence IDs (E1-E10) refer to docs/EVIDENCE.md. Status tags: supported / assumed / derived / design / from_data.
+
+Temperature / sensor roles (one codebase, three layers — do not conflate):
+1. ML forecaster (logic/forecast.py): OUTDOOR weather columns only → predicts A/C kWh.
+2. Indoor physics (logic/indoor_model.py): modelled T_in gates comfort in planner/engine.
+3. Hardware DHT11 on ESP32: live room RH/temp for local OVERRIDE and optional tau fit via
+   tools/log_indoor.py + tools/fit_tau.py. Live DHT is never an RF training feature.
 """
 import os
 
@@ -12,6 +18,10 @@ RAW_DIR = "data/raw"
 DATA_SOURCE = "synthetic_sample"          # synthetic_sample | organizer | own_logger
 OUTDOOR_PHASE_SHIFT_H = 12                # D1: rotate temp/RH/dew within each day. 0 for organizer data.
 SAMPLE_TZ_NOTE = "hourly, July 2025, one building"
+# Columns required after rename (outdoor climate + load). Indoor is not in the hourly sample.
+REQUIRED_HOURLY_COLS = ("timestamp", "temp", "humidity", "dew_point", "solar", "ac_kwh")
+# Optional override written by tools/fit_tau.py --write-override (own DHT calibration).
+PROFILE_OVERRIDE_PATH = os.path.join("data", "processed", "house_profile_override.json")
 
 # ── Tariff window / tariffs ──────────────────────────────────────────────────
 PEAK_HOURS = tuple(range(12, 19))         # TOU peak 12:00-18:59 (7 h)
@@ -43,6 +53,8 @@ HOUSE_PROFILES = {                        # tau [h] assumed; g = COP / C_th [deg
     "leaky":   {"tau": 3.0, "g": 0.60, "c_th": 3.7},
 }
 DEFAULT_PROFILE = "typical"
+# When PROFILE_OVERRIDE_PATH exists (from DHT log + fit_tau), indoor_model prefers its tau/g
+# and provenance becomes own_logger / "own-measured". Does not affect RF FEATURES.
 
 # ── Planner grid (7.4) ───────────────────────────────────────────────────────
 PLAN_CUT_GRID = tuple(round(0.05 * i, 2) for i in range(0, 13))      # 0..0.60

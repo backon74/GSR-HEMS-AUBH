@@ -5,7 +5,8 @@
     "phase_shift_h": 12,
     "rows": 720,
     "buildings": 1,
-    "file": "HEMS_Sample_Dataset.xlsx"
+    "file": "HEMS_Sample_Dataset.xlsx",
+    "indoor_profile": "assumed"
   },
   "scope": {
     "days": 29,
@@ -169,7 +170,7 @@
     },
     "train_days": 21,
     "test_days": 8,
-    "note": "Headline schedule uses RF day-ahead forecasts; train days are in-sample. Ablation uses test days only."
+    "note": "Headline schedule uses RF day-ahead forecasts (outdoor features); train days are in-sample. Ablation uses test days only. Indoor comfort is physics-modelled; DHT is live/calibration only."
   },
   "sensitivity_range": {
     "grid": "profile {tight,typical,leaky} x rise limit {1.0,1.5,2.0} x K_REC {0.25,0.5,1.0}",
@@ -207,5 +208,6 @@
       }
     }
   },
-  "days_at_cut_ceiling": 5
+  "days_at_cut_ceiling": 5,
+  "indoor_profile_label": "assumed"
 }
