@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Live dashboard / bridge telemetry (ESP32 DHT when connected)
+data/processed/live_telemetry.json
+data/processed/live_telemetry.json.tmp
+data/processed/live_history.jsonl
+data/processed/house_profile_override.json

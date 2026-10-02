@@ -113,7 +113,9 @@ def contract_text():
           'flyback diode. Fan = A/C stand-in.', '', '## Timing', '',
           f"{config.SECONDS_PER_SIM_HOUR} s per simulated hour, {config.SECONDS_PER_PEAK_HOUR} s during tariff peak hours "
           f"({min(config.PEAK_HOURS)}-{max(config.PEAK_HOURS)}). Loop length: **{loop_seconds()} s** per 24 h day. "
-          'The laptop owns the simulated clock; the device displays whatever hour it is sent.', '',
+          'The laptop owns the simulated clock and sends one command per hour; the sketch does not simulate time. '
+          'The ESP32 reads the DHT about once a second and streams every sample, so the dashboard is a live sensor '
+          'view regardless of the hour pacing.', '',
           '## Serial protocol', '',
           'Laptop to ESP32, one line per simulated hour: `H14,PEAK_REDUCE,75` (optional 4th field `,MODEL` when the '
           f"model triggered an override). Baud {config.SERIAL_BAUD}.", '',

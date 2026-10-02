@@ -41,10 +41,10 @@ python train.py          # optional: retrain legacy models (pipeline.py never ov
 python pipeline.py       # writes results/, firmware/, docs/EVIDENCE.md, data/processed/, and the README block above
 python -m pytest -q      # new tests
 python tests/__init__.py # legacy 22 checks
-python bridge/serial_bridge.py --dry-run   # print the serial lines for the demo day
+streamlit run dashboard/app.py          # live Now panel (SIM until ESP32 DHT is connected)
+python bridge/serial_bridge.py --dry-run   # print serial lines + write live_telemetry.json
 ```
-The old Streamlit dashboard (`streamlit run dashboard/app.py`) still runs on the legacy rules and is being replaced; do not quote numbers from it. The new dashboard consumes `logic.engine.get_payload(date, hour, scenario)`.
-
+The dashboard consumes `logic.engine.get_payload(date, hour, scenario)` and optional ESP32 telemetry from `data/processed/live_telemetry.json`. Do not quote numbers from the old report-style app.
 ## Honesty rules
 - Energy savings are quoted **closed-loop** (thermostat recovery after the peak is paid for); open-loop is shown beside it.
 - Under today's **flat** tariff the load shift itself saves nothing; savings are shown for both tariffs.
@@ -59,6 +59,23 @@ ESP32 + DHT11 + LCD running the decision contract in `firmware/HARDWARE_CONTRACT
 https://github.com/user-attachments/assets/2500ed41-5113-4c2d-bf1b-20d328dac2fd
 
 ## Dashboard
+
+Live view (replaces the old report-style Streamlit app):
+
+```bash
+python pipeline.py                 # once: demo day + firmware artefacts
+streamlit run dashboard/app.py     # SIM clock; mode + climate; analytics grow hour by hour
+```
+
+A sensor console, not a report: feed health (LIVE / REPLAY / STALE / SENSOR FAULT, packet age, sample rate), the measured room temperature, humidity, dew point and fan duty, streaming traces against wall-clock time, per-signal session statistics, and the raw packet tail.
+
+The laptop paces the simulated hour (3 s, 5 s in the tariff peak) and the ESP32 only senses and executes; it reads the DHT about once a second and streams every sample:
+
+```bash
+python bridge/serial_bridge.py --port /dev/cu.usbserial-0001   # start before board power
+```
+
+The bridge publishes each packet to `data/processed/live_telemetry.json` (+ `live_history.jsonl`) and the console fills in. With no board attached the sensor tiles stay empty by design; "Replay schedule" walks the planned day so the layout stays reviewable, and `python tools/fake_device_feed.py` emits stand-in DHT packets for console work (never used by the pipeline or the model).
 
 https://github.com/user-attachments/assets/895f52ad-5ef7-4272-af1a-7fa0557637e7
 

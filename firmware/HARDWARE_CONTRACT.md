@@ -18,7 +18,7 @@ Fan floor 30% (a 40 mm fan stalls below ~25-30%). PWM 25 kHz via MOSFET + flybac
 
 ## Timing
 
-3 s per simulated hour, 5 s during tariff peak hours (12-18). Loop length: **86 s** per 24 h day. The laptop owns the simulated clock; the device displays whatever hour it is sent.
+3 s per simulated hour, 5 s during tariff peak hours (12-18). Loop length: **86 s** per 24 h day. The laptop owns the simulated clock and sends one command per hour; the sketch does not simulate time. The ESP32 reads the DHT about once a second and streams every sample, so the dashboard is a live sensor view regardless of the hour pacing.
 
 ## Serial protocol
 

@@ -111,8 +111,14 @@ OVERRIDE_BLINK_MS = 250
 LIVE_RH_DELTA = 15                        # demo-scaled stand-in for a dew-point rule
 LIVE_RH_BASE_ALPHA = 0.02
 LIVE_HOLD_S = 8
-SECONDS_PER_SIM_HOUR = 3
+SECONDS_PER_SIM_HOUR = 3                  # laptop paces the simulated hour
 SECONDS_PER_PEAK_HOUR = 5
+CLOCK_OWNER = "laptop"                    # laptop owns the clock; the ESP32 just senses and executes
 MAGNUS_A = 17.62
 MAGNUS_B = 243.12
 SERIAL_BAUD = 115200
+# Live dashboard ↔ bridge shared files (ESP32 DHT fills these when hardware is connected)
+LIVE_TELEMETRY_PATH = os.path.join("data", "processed", "live_telemetry.json")
+LIVE_HISTORY_PATH = os.path.join("data", "processed", "live_history.jsonl")
+LIVE_TELEMETRY_STALE_S = 8.0              # treat DHT feed as offline if older than this
+DEMO_DAY_PATH = os.path.join("results", "demo_day.json")
