@@ -285,14 +285,96 @@ CSS = """
 html, body, [class*="css"] { font-family: 'Archivo', system-ui, sans-serif; }
 .stApp { background: #05080b; color: var(--sc-ink); }
 .block-container { padding: 0 0 4rem !important; max-width: 100% !important; }
-#MainMenu, footer, header { visibility: hidden; }
+/* Kill Streamlit chrome; keep only the sidebar expand control as an instrument latch. */
+#MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"], .stDeployButton { display: none !important; }
+header[data-testid="stHeader"] {
+  background: transparent !important; border: 0 !important;
+  height: 0 !important; min-height: 0 !important; padding: 0 !important;
+}
+[data-testid="stExpandSidebarButton"] {
+  position: fixed !important; top: 0.85rem; left: 0.85rem; z-index: 1000;
+  width: 2rem !important; height: 2rem !important;
+  background: linear-gradient(180deg, #202830 0%, #141a20 100%) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important; border-radius: 2px !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  color: var(--sc-ink-2) !important;
+}
+[data-testid="stExpandSidebarButton"]:hover {
+  border-color: rgba(201,162,39,0.55) !important; color: var(--sc-brass) !important;
+}
 ::selection { background: rgba(201,162,39,0.32); color: #fff; }
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: #05080b; }
 ::-webkit-scrollbar-thumb { background: #27313a; border: 3px solid #05080b; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #3a4752; }
 :focus-visible { outline: 2px solid var(--sc-brass); outline-offset: 2px; }
-.stApp [data-testid="stSidebar"] { background: #080c10; border-right: 1px solid rgba(255,255,255,0.07); }
+
+/* Sidebar = service panel, same graphite/brass language as the plates. */
+.stApp [data-testid="stSidebar"] {
+  background: #080c10 !important;
+  border-right: 1px solid rgba(255,255,255,0.07) !important;
+  color: var(--sc-ink-2) !important;
+}
+[data-testid="stSidebar"] > div:first-child {
+  background: #080c10 !important;
+  padding-top: 1.1rem !important;
+}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+[data-testid="stSidebar"] .stCaption {
+  font-family: 'Azeret Mono', monospace !important;
+  font-size: 0.68rem !important; line-height: 1.45 !important;
+  color: var(--sc-ink-3) !important; letter-spacing: 0.02em !important;
+}
+[data-testid="stSidebar"] [data-testid="stCode"],
+[data-testid="stSidebar"] pre {
+  background: #070b0e !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 3px !important;
+  color: #9fb0bd !important;
+  font-family: 'Azeret Mono', monospace !important;
+  font-size: 0.66rem !important;
+}
+[data-testid="stSidebar"] hr {
+  border: 0 !important; border-top: 1px solid rgba(255,255,255,0.09) !important;
+  margin: 1rem 0 !important;
+}
+[data-testid="stSidebar"] button[kind="secondary"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {
+  background: linear-gradient(180deg, #202830 0%, #141a20 100%) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  border-radius: 2px !important;
+  color: var(--sc-ink) !important;
+  font-family: 'Azeret Mono', monospace !important;
+  font-size: 0.66rem !important; letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+[data-testid="stSidebar"] button[kind="secondary"]:hover,
+[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:hover {
+  border-color: rgba(201,162,39,0.55) !important; color: var(--sc-brass) !important;
+}
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+[data-testid="stSidebar"] label {
+  font-family: 'Azeret Mono', monospace !important;
+  font-size: 0.64rem !important; letter-spacing: 0.16em !important;
+  text-transform: uppercase !important; color: var(--sc-ink-3) !important;
+}
+[data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] {
+  background: var(--sc-brass) !important;
+  border: 1px solid #a8861a !important;
+  box-shadow: 0 0 0 2px rgba(201,162,39,0.18) !important;
+}
+[data-testid="stSidebar"] [data-baseweb="slider"] div[role="presentation"] > div {
+  background: rgba(255,255,255,0.12) !important;
+}
+[data-testid="stSidebarCollapseButton"] {
+  color: var(--sc-ink-2) !important;
+}
+[data-testid="stSidebarCollapseButton"]:hover {
+  color: var(--sc-brass) !important;
+}
 
 /* ── sky band ───────────────────────────────────────────────────────────── */
 /* The hero owns the whole first viewport: at 66vh the second band intruded on load and the
@@ -464,17 +546,53 @@ html, body, [class*="css"] { font-family: 'Archivo', system-ui, sans-serif; }
   padding: 0.8rem 0.95rem; overflow-x: auto; white-space: pre; line-height: 1.7;
 }
 @media (max-width: 1100px) {
-  /* The orbit is pinned to a 210px lane and the content starts below it, so the orb has
-     somewhere to be at every elevation instead of landing behind the dial. The sky label is
-     absolute at the band's foot, so leave it room under the stacked plates too. */
-  .sc-orbit { top: 26px; height: 200px; }   /* 26px so a high orb is not cropped by the band */
-  .sc-wrap { grid-template-columns: 1fr; justify-items: center; padding: 13rem 1.2rem 3.6rem; }
-  .sc-stage { min-height: 92vh; }
-  .sc-stage.sc-short { min-height: 78vh; }
-  .sc-dial { max-width: 258px; }
-  .sc-val.sc-xl { font-size: 3.2rem; }
-  .sc-section { padding: 2.6rem 1.2rem 0; }
-  .sc-stack { width: 100%; }
+  /* The orbit is pinned to a top lane and the content starts below it, so the orb has
+     somewhere to be at every elevation instead of landing behind the dial. */
+  .sc-orbit { top: 18px; height: 160px; }
+  .sc-wrap { grid-template-columns: 1fr; justify-items: center; padding: 10.5rem 1.1rem 2.4rem; gap: 1.1rem; }
+  .sc-stage { min-height: 100vh; }
+  .sc-stage.sc-short { min-height: 72vh; }
+  .sc-dial { max-width: 220px; }
+  .sc-dialwrap { gap: 0.55rem; }
+  .sc-nameplate { padding: 0.32rem 0.75rem; gap: 0.65rem; }
+  .sc-np-read { font-size: 0.95rem; }
+  .sc-val.sc-xl { font-size: 2.8rem; }
+  .sc-val.sc-lg { font-size: 1.85rem; }
+  .sc-plate { padding: 0.72rem 0.95rem; }
+  .sc-plate.sc-lead { padding: 0.95rem 1.05rem 0.85rem; }
+  .sc-stack { width: 100%; gap: 0.55rem; }
+  .sc-row2 { gap: 0.55rem; }
+  .sc-section { padding: 2.4rem 1.1rem 0; }
+  .sc-skylabel { left: 1.1rem; bottom: 0.85rem; font-size: 0.62rem; }
+}
+@media (max-width: 640px) {
+  /* Phone first viewport: clock + sky + temp + humidity must read without scrolling.
+     Dew and the live strip may kiss the fold; they stay in the same stage. */
+  .sc-orbit { top: 10px; height: 118px; }
+  .sc-glow { width: 280px; height: 280px; margin: -140px 0 0 -140px; }
+  .sc-orb { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+  .sc-wrap { padding: 7.6rem 0.85rem 1.6rem; gap: 0.85rem; align-items: start; }
+  .sc-stage { min-height: 100svh; }
+  .sc-stage.sc-short { min-height: 70svh; }
+  .sc-dial { max-width: 168px; }
+  .sc-dialwrap { gap: 0.4rem; }
+  .sc-nameplate { padding: 0.28rem 0.65rem; gap: 0.5rem; }
+  .sc-np-cap { font-size: 0.56rem; letter-spacing: 0.14em; }
+  .sc-np-read { font-size: 0.84rem; }
+  .sc-val.sc-xl { font-size: 2.35rem; }
+  .sc-val.sc-lg { font-size: 1.45rem; }
+  .sc-val.sc-md { font-size: 1.15rem; }
+  .sc-plate { padding: 0.55rem 0.75rem; box-shadow: 0 8px 18px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07); }
+  .sc-plate.sc-lead { padding: 0.7rem 0.85rem 0.6rem; }
+  .sc-lbl { font-size: 0.58rem; letter-spacing: 0.14em; }
+  .sc-note { font-size: 0.58rem; margin-top: 0.28rem; }
+  .sc-stack { gap: 0.45rem; }
+  .sc-row2 { gap: 0.45rem; }
+  .sc-hairline { margin-top: 0.5rem; padding-top: 0.45rem; }
+  .sc-mode { font-size: 1.35rem; }
+  .sc-section { padding: 2rem 0.85rem 0; }
+  .sc-h2 { font-size: 1.25rem; }
+  .sc-skylabel { left: 0.85rem; right: 0.85rem; bottom: 0.55rem; font-size: 0.56rem; }
 }
 </style>
 """

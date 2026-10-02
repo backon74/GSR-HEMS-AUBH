@@ -190,11 +190,11 @@ TICKING = device_live or st.session_state.replaying
 
 with st.sidebar:
     st.markdown("<div class='sc-lbl'>SmartCool · GSR 2026</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='sc-tag' style='color:{STATE_COLOR[status['state']]};margin:.5rem 0 1rem'>"
+    st.markdown(f"<div class='sc-tag' style='color:{STATE_COLOR[status['state']]};margin:.55rem 0 1.1rem'>"
                 f"<span class='sc-dot{' sc-beat' if device_live else ''}' "
                 f"style='background:{STATE_COLOR[status['state']]}'></span>{status['badge']}</div>",
                 unsafe_allow_html=True)
-    st.caption('Connect the board, then start the bridge before powering the ESP32:')
+    st.caption('Service panel · connect the board, then start the bridge before powering the ESP32:')
     st.code('python bridge/serial_bridge.py --port /dev/cu.usbserial-0001', language=None)
     st.caption('The laptop paces the simulated hour. The ESP32 reads the DHT about once a '
                'second and streams every sample.')
@@ -207,7 +207,7 @@ with st.sidebar:
     st.caption('Replay walks the schedule so the plan section moves without hardware. '
                'Measured tiles stay empty — nothing is sensing yet.')
     st.session_state.replay_slider = st.session_state.replay_hour
-    st.slider('Hour', 0, 23, key='replay_slider', on_change=_on_replay_hour,
+    st.slider('Simulated hour', 0, 23, key='replay_slider', on_change=_on_replay_hour,
               disabled=device_live or st.session_state.replaying)
 
 # ══ 1. NOW ═══════════════════════════════════════════════════════════════════
