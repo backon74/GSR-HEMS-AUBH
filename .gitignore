@@ -211,3 +211,6 @@ data/processed/live_telemetry.json
 data/processed/live_telemetry.json.tmp
 data/processed/live_history.jsonl
 data/processed/house_profile_override.json
+
+# Impeccable finish dumps (keep config; skip ephemeral review PNGs)
+.impeccable/review/

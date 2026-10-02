@@ -1,17 +1,22 @@
-"""SmartCool sensor console.
+"""SmartCool console — an instrument dial under a live sky.
 
     streamlit run dashboard/app.py
 
-A live view of what the ESP32 + DHT11 are reporting: feed health, current readings, streaming
-traces against wall-clock time, the raw packet tail, and session statistics that accumulate.
-The laptop paces the simulated hour (config.SECONDS_PER_SIM_HOUR); the device only senses and
-executes, so every sensor number here is measured, not modelled.
+Four sections, top to bottom:
+  1. NOW         wall-clock dial, real sun over the site, and what the DHT11 is reading
+  2. THE PLAN    the simulated demo day stepping hour by hour, with the mode it chose
+  3. SAVINGS     what the load shift bought
+  4. SENSORS     feed health, traces, session statistics, raw packets
+
+Every sensor number is measured; indoor estimates are modelled; outdoor is replayed schedule.
+The sky is not decoration: dashboard/skyclock.py puts the sun where it actually is over
+config.SITE_LAT / SITE_LON, so the light on screen matches the light outside.
 """
 import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import date as _date, datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -21,60 +26,41 @@ import streamlit as st
 
 import config
 from dashboard.live_io import feed_status, load_history, merge_device, read_telemetry
+from dashboard.skyclock import CSS, dial, sky, sky_layer
 from logic.engine import get_payload
 
-MODE_COLOR = {
-    'normal': '#3d8b6e',
-    'pre_cool': '#2f6fed',
-    'peak_reduce': '#e0a106',
-    'comfort_override': '#d64545',
-}
-MODE_LABEL = {
-    'normal': 'NORMAL',
-    'pre_cool': 'PRE-COOL',
-    'peak_reduce': 'PEAK REDUCE',
-    'comfort_override': 'OVERRIDE',
-}
-STATE_COLOR = {'live': '#7dffb3', 'fault': '#ff8f6b', 'replay': '#f0c674',
-               'stale': '#b58b4c', 'offline': '#6f8593'}
+MODE_COLOR = {'normal': '#3f8f6b', 'pre_cool': '#4a86d8',
+              'peak_reduce': '#d8a12a', 'comfort_override': '#cf5340'}
+MODE_LABEL = {'normal': 'NORMAL', 'pre_cool': 'PRE-COOL',
+              'peak_reduce': 'PEAK REDUCE', 'comfort_override': 'OVERRIDE'}
+STATE_COLOR = {'live': '#5fd999', 'fault': '#ff8f6b', 'replay': '#c9a227',
+               'stale': '#9a7a3a', 'offline': '#5d6d79'}
+BRASS = '#c9a227'
+INK_2, INK_3 = '#b6c4cf', '#9dabb6'
+LOCAL_TZ = datetime.now().astimezone().tzinfo
+# Trace colours are taken from the sky ramp (warm horizon, cool zenith, brass) so the charts
+# stay inside the one accent the world committed to instead of inventing five hues.
+C_WARM, C_COOL, C_PALE, C_MODEL, C_CLAY = '#e0a45c', '#7fa9c9', '#b9d4c9', '#6f9fe0', '#c2614a'
 
-st.set_page_config(page_title='SmartCool Sensor Console', layout='wide',
-                   initial_sidebar_state='expanded')
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@500;700&display=swap');
-html, body, [class*="css"] { font-family: 'Sora', sans-serif; }
-.stApp { background: #0a0f12; color: #e8eef2; }
-.block-container { padding-top: 1rem; max-width: 1500px; }
-.sc-bar {
-  display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap;
-  border: 1px solid rgba(232,238,242,0.1); border-left: 4px solid #6f8593;
-  background: rgba(255,255,255,0.025); padding: 0.75rem 1rem; margin-bottom: 1rem;
-}
-.sc-bar .pill { font-family: 'IBM Plex Mono', monospace; font-size: 0.95rem; font-weight: 600; letter-spacing: 0.06em; }
-.sc-bar .kv { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #8aa0ad; }
-.sc-bar .kv b { color: #d7e2e9; font-weight: 500; }
-.sc-title { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.015em; margin-right: auto; }
-.sc-gauge {
-  border: 1px solid rgba(232,238,242,0.09); background: rgba(255,255,255,0.03);
-  padding: 0.85rem 1rem 0.95rem;
-}
-.sc-gauge .lbl { color: #8aa0ad; font-size: 0.74rem; letter-spacing: 0.04em; }
-.sc-gauge .big { font-family: 'IBM Plex Mono', monospace; font-size: 2.5rem; font-weight: 600; line-height: 1.1; }
-.sc-gauge .unit { font-size: 1rem; color: #8aa0ad; margin-left: 0.15rem; }
-.sc-gauge .sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: #6f8593; margin-top: 0.3rem; }
-.sc-mode { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 600;
-           padding: 0.9rem 1rem; border-left: 5px solid #3d8b6e; background: rgba(255,255,255,0.03); }
-.sc-feed { font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; color: #9fb3c0;
-           background: #070b0d; border: 1px solid rgba(232,238,242,0.08); padding: 0.6rem 0.8rem;
-           max-height: 190px; overflow-y: auto; white-space: pre; line-height: 1.5; }
-.sc-strip { display: flex; gap: 2px; margin: 0.2rem 0 0.9rem; }
-.sc-strip div { flex: 1; height: 10px; }
-h3 { font-family: 'Sora', sans-serif !important; font-size: 1.05rem !important; letter-spacing: -0.01em;
-     margin-top: 0.4rem !important; }
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title='SmartCool Console', layout='wide',
+                   initial_sidebar_state='collapsed')
+st.markdown(CSS, unsafe_allow_html=True)
+# Direction contract — kept in the emitted markup so it is auditable in the built page.
+st.markdown("""<!--
+THESIS: A thermostat's two facts are what time it is and how hot it is, so this console is an
+instrument dial under a real sky, not a grid of metric cards.
+OWN-WORLD: Aneroid weather-station instrument. Machined bezel, engraved tick ring, smoked
+graphite plates, one brass accent. The page has no fixed palette: colour comes from solar
+elevation over Dammam, from #03050b night to bleached Gulf haze at 82 degrees.
+STORY: Read the room at a glance, watch the planned day step through, see what it saved,
+then check the sensors are honest.
+FIRST VIEWPORT: Full-bleed sky, sun on its true arc. 372px dial left, stacked readouts right
+with room temperature dominant; the commanded mode and 24h strip ride under a hairline in the
+feed plate, deliberately subordinate so nothing competes with the temperature.
+FORM: Instrument dial, brief-pinned by the user (analog clock + time-of-day sky).
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review,
+the verdict, and DESIGN.md
+-->""", unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -82,6 +68,15 @@ def _demo():
     if not os.path.isfile(config.DEMO_DAY_PATH):
         return None
     with open(config.DEMO_DAY_PATH) as f:
+        return json.load(f)
+
+
+@st.cache_data(show_spinner=False)
+def _kpis():
+    p = os.path.join('results', 'kpis.json')
+    if not os.path.isfile(p):
+        return {}
+    with open(p) as f:
         return json.load(f)
 
 
@@ -100,32 +95,36 @@ def _num(v, nd=1, dash='—'):
         return str(v)
 
 
-def gauge(label, value, unit, sub, accent='#e8eef2'):
-    st.markdown(
-        f'<div class="sc-gauge"><div class="lbl">{label}</div>'
-        f'<div class="big" style="color:{accent}">{value}<span class="unit">{unit}</span></div>'
-        f'<div class="sub">{sub}</div></div>',
-        unsafe_allow_html=True,
-    )
+def plate(label, value, unit='', note='', size='sc-lg', lead=False):
+    void = ' sc-void' if value == '—' else ''
+    u = f'<u>{unit}</u>' if unit else ''
+    return (f"<div class='sc-plate{' sc-lead' if lead else ''}'><div class='sc-lbl'>{label}</div>"
+            f"<div class='sc-val {size}{void}'>{value}{u}</div>"
+            f"{f'<div class=sc-note>{note}</div>' if note else ''}</div>")
 
 
-def spark(df, ycol, color, title, unit, height=170, extra=None):
+def figure(height=250, title='', legend=False):
     fig = go.Figure()
-    if ycol in df.columns and df[ycol].notna().any():
-        fig.add_trace(go.Scatter(x=df['t'], y=df[ycol], mode='lines',
-                                 line=dict(color=color, width=2), name=unit,
-                                 fill='tozeroy', fillcolor=color.replace(')', ',0.08)').replace('rgb', 'rgba')
-                                 if color.startswith('rgb') else 'rgba(255,255,255,0.04)'))
-    for name, col, c in (extra or []):
-        if col in df.columns and df[col].notna().any():
-            fig.add_trace(go.Scatter(x=df['t'], y=df[col], mode='lines', name=name,
-                                     line=dict(color=c, width=1.4, dash='dot')))
-    fig.update_layout(height=height, margin=dict(l=44, r=12, t=28, b=28),
-                      paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.015)',
-                      font_color='#9fb3c0', font_size=11, title=dict(text=title, font_size=12),
-                      showlegend=bool(extra), legend=dict(orientation='h', y=1.3, font_size=10),
-                      xaxis=dict(showgrid=False), yaxis=dict(gridcolor='rgba(255,255,255,0.06)'))
-    st.plotly_chart(fig, width='stretch')
+    top = 58 if (title and legend) else (34 if title else 12)
+    fig.update_layout(
+        height=height, margin=dict(l=52, r=16, t=top, b=34),
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.016)',
+        font=dict(family='Azeret Mono, monospace', color=INK_3, size=11),
+        title=dict(text=title, font=dict(size=12, color=INK_2), y=0.97, yanchor='top'),
+        showlegend=legend,
+        legend=dict(orientation='h', yanchor='bottom', y=1.0, x=0, font=dict(size=10),
+                    bgcolor='rgba(0,0,0,0)'),
+        hoverlabel=dict(bgcolor='#0d1217', bordercolor='rgba(255,255,255,0.14)',
+                        font=dict(family='Azeret Mono, monospace', color='#eef3f7', size=11)),
+        xaxis=dict(showgrid=False, zeroline=False, linecolor='rgba(255,255,255,0.12)'),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.06)', zeroline=False),
+    )
+    return fig
+
+
+def chart(fig):
+    """Plotly without the default modebar chrome — the console owns the surface."""
+    st.plotly_chart(fig, width='stretch', config={'displayModeBar': False, 'responsive': True})
 
 
 demo = _demo()
@@ -133,7 +132,9 @@ if demo is None:
     st.error('Run `python pipeline.py` first to generate results/demo_day.json')
     st.stop()
 
+kpi = _kpis()
 scenario_name = demo['scenario']['name'] if isinstance(demo.get('scenario'), dict) else None
+rows = demo['rows']
 
 if 'replay_hour' not in st.session_state:
     st.session_state.replay_hour = 0
@@ -144,199 +145,327 @@ if 'replay_hour' not in st.session_state:
 def _on_replay_hour():
     st.session_state.replay_hour = st.session_state.replay_slider
 
-tel = read_telemetry()
-hist = load_history()
-status = feed_status(tel, hist)
-device_live = status['state'] in ('live', 'fault')
 
-# Hour context: from the feed when it is publishing, else the local replay walk
-if tel and tel.get('fresh') and tel.get('sim_hour') is not None:
-    hour = int(tel['sim_hour'])
-    date = str(tel.get('date') or demo['date'])
-elif st.session_state.replaying:
-    base = (config.SECONDS_PER_PEAK_HOUR if st.session_state.replay_hour in config.PEAK_HOURS
-            else config.SECONDS_PER_SIM_HOUR)
-    if time.time() - st.session_state.replay_started >= base:
-        st.session_state.replay_hour = (st.session_state.replay_hour + 1) % 24
-        st.session_state.replay_started = time.time()
-    hour, date = st.session_state.replay_hour, demo['date']
-else:
-    hour, date = st.session_state.replay_hour, demo['date']
+def _live():
+    """Re-read the feed. Called once per page run and again on every fragment tick."""
+    tel = read_telemetry()
+    hist = load_history()
+    status = feed_status(tel, hist)
+    return tel, hist, status, status['state'] in ('live', 'fault')
+
+
+def _slot(tel, advance=False):
+    """The simulated hour and its payload. The device feed owns the hour when it is
+    publishing; otherwise the local replay walk does. Only the plan band advances it."""
+    if tel and tel.get('fresh') and tel.get('sim_hour') is not None:
+        sim_hour = int(tel['sim_hour'])
+        sim_date = str(tel.get('date') or demo['date'])
+    else:
+        if advance and st.session_state.replaying:
+            base = (config.SECONDS_PER_PEAK_HOUR if st.session_state.replay_hour in config.PEAK_HOURS
+                    else config.SECONDS_PER_SIM_HOUR)
+            if time.time() - st.session_state.replay_started >= base:
+                st.session_state.replay_hour = (st.session_state.replay_hour + 1) % 24
+                st.session_state.replay_started = time.time()
+        sim_hour, sim_date = st.session_state.replay_hour, demo['date']
+    payload = merge_device(_cached_payload(sim_date, sim_hour, scenario_name), tel)
+    return sim_hour, sim_date, payload
+
+
+def _strip(payload):
+    return ''.join(
+        f"<div class='{'sc-nowcell' if r['now'] else ''}' "
+        f"style='background:{MODE_COLOR.get(r['actual_mode'], '#444')};"
+        f"opacity:{1 if r['now'] else 0.5}'></div>" for r in payload['ribbon']
+    )
+
+
+tel, hist, status, device_live = _live()
+sim_hour, sim_date, payload = _slot(tel)
+mode = payload['modelled']['actual_mode']['value']
+mode_c = MODE_COLOR.get(mode, '#889')
+# The hour can only move when the board is publishing or the replay walk is running; outside
+# those two cases the bands are static and nothing needs to tick.
+TICKING = device_live or st.session_state.replaying
 
 with st.sidebar:
-    st.markdown('### Sensor console')
-    st.caption('SmartCool · GSR 2026 Energy')
-    st.markdown('**Feed**')
-    st.markdown(
-        f"<span class='pill' style='color:{STATE_COLOR[status['state']]}'>{status['badge']}</span>",
-        unsafe_allow_html=True,
-    )
-    st.caption(
-        'Connect the board to populate the sensor panels:\n\n'
-        '`python bridge/serial_bridge.py --port /dev/cu.usbserial-0001`\n\n'
-        'Start the bridge before powering the ESP32. The laptop paces the hour; '
-        'the device reads the DHT about once a second and streams every sample.'
-    )
-    st.code(config.LIVE_TELEMETRY_PATH, language=None)
+    st.markdown("<div class='sc-lbl'>SmartCool · GSR 2026</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='sc-tag' style='color:{STATE_COLOR[status['state']]};margin:.5rem 0 1rem'>"
+                f"<span class='sc-dot{' sc-beat' if device_live else ''}' "
+                f"style='background:{STATE_COLOR[status['state']]}'></span>{status['badge']}</div>",
+                unsafe_allow_html=True)
+    st.caption('Connect the board, then start the bridge before powering the ESP32:')
+    st.code('python bridge/serial_bridge.py --port /dev/cu.usbserial-0001', language=None)
+    st.caption('The laptop paces the simulated hour. The ESP32 reads the DHT about once a '
+               'second and streams every sample.')
     st.markdown('---')
-    st.markdown('**No board connected?**')
-    if st.button('Stop replay' if st.session_state.replaying else 'Replay schedule',
+    if st.button('Stop replay' if st.session_state.replaying else 'Replay the planned day',
                  width='stretch', disabled=device_live):
         st.session_state.replaying = not st.session_state.replaying
         st.session_state.replay_started = time.time()
         st.rerun()
-    st.caption('Replay walks the planned day so the layout is reviewable. Sensor tiles stay '
-               'empty because nothing is measuring yet.')
-    # Mirror into a separate widget key; a disabled slider keyed on replay_hour would
-    # overwrite the auto-advanced hour on every rerun.
+    st.caption('Replay walks the schedule so the plan section moves without hardware. '
+               'Measured tiles stay empty — nothing is sensing yet.')
     st.session_state.replay_slider = st.session_state.replay_hour
-    st.slider('Replay hour', 0, 23, key='replay_slider', on_change=_on_replay_hour,
+    st.slider('Hour', 0, 23, key='replay_slider', on_change=_on_replay_hour,
               disabled=device_live or st.session_state.replaying)
 
-payload = merge_device(_cached_payload(date, hour, scenario_name), tel)
-mode = payload['modelled']['actual_mode']['value']
-mode_c = MODE_COLOR.get(mode, '#888')
-dev = payload['device']
+# ══ 1. NOW ═══════════════════════════════════════════════════════════════════
+# Only the hero ticks. A page-wide rerun every second rebuilt the savings charts and
+# collapsed the decision trace, so the clock's cadence is scoped to the band that needs it.
+@st.fragment(run_every=1)
+def now_band():
+    tel, _hist, status, device_live = _live()
+    _h, _d, pl = _slot(tel)
+    md = pl['modelled']['actual_mode']['value']
+    md_c = MODE_COLOR.get(md, '#889')
+    dev = pl['device']
 
-age = status['age_s']
-age_txt = '—' if age is None else (f'{age:.1f}s ago' if age < 600 else 'stale')
-rate_txt = '—' if not status['rate_hz'] else f"{status['rate_hz']} Hz"
-ok = status['sensor_ok']
-ok_txt = 'ok' if ok is True else ('FAULT' if ok is False else '—')
+    now = datetime.now()
+    secs = now.hour * 3600 + now.minute * 60 + now.second + now.microsecond / 1e6
 
-st.markdown(
-    f"<div class='sc-bar' style='border-left-color:{STATE_COLOR[status['state']]}'>"
-    f"<div class='sc-title'>SmartCool sensor console</div>"
-    f"<div class='pill' style='color:{STATE_COLOR[status['state']]}'>{status['badge']}</div>"
-    f"<div class='kv'>last packet <b>{age_txt}</b></div>"
-    f"<div class='kv'>sample rate <b>{rate_txt}</b></div>"
-    f"<div class='kv'>DHT <b>{ok_txt}</b></div>"
-    f"<div class='kv'>samples <b>{status['samples']}</b></div>"
-    f"<div class='kv'>override <b>{(tel or {}).get('override_source', '—')}</b></div>"
-    f"<div class='kv'>{date} · hour <b>{hour:02d}:00</b></div>"
-    f"</div>",
-    unsafe_allow_html=True,
-)
+    t_live, rh_live = dev['temp']['value'], dev['rh']['value']
+    dew_live, fan_live = dev['dew']['value'], dev['fan_duty']['value']
+    measured, waiting = 'DHT11 · measured', 'waiting for the board'
+    feed_note = (f"{status['rate_hz'] or '—'} Hz · last packet {status['age_s']:.1f}s ago"
+                 if device_live else 'no packets yet — start the bridge')
+    fan = fan_live if fan_live is not None else pl['modelled']['fan_pwm']['value']
 
-if not device_live:
-    st.info('Waiting for the ESP32 DHT stream. Sensor tiles and traces below fill as packets arrive; '
-            'schedule context (outdoor, modelled indoor, plan) is shown meanwhile.')
+    readouts = (
+        plate('Room temperature', _num(t_live), '°C' if t_live is not None else '',
+              measured if t_live is not None else waiting, 'sc-xl', lead=True)
+        + "<div class='sc-row2'>"
+        + plate('Relative humidity', _num(rh_live, 0), '%' if rh_live is not None else '',
+                measured if rh_live is not None else waiting, 'sc-lg')
+        + plate('Dew point', _num(dew_live), '°C' if dew_live is not None else '',
+                (f"{measured} · muggy above {config.DEW_POINT_UNCOMFORTABLE:g} °C"
+                 if dew_live is not None else waiting),
+                'sc-lg')
+        + "</div>"
+        + f"<div class='sc-plate'><div class='sc-tag' style='color:{STATE_COLOR[status['state']]}'>"
+          f"<span class='sc-dot{' sc-beat' if device_live else ''}' "
+          f"style='background:{STATE_COLOR[status['state']]}'></span>{status['badge']}</div>"
+          f"<div class='sc-note' style='margin-top:.45rem'>{feed_note} · "
+          f"{status['samples']} samples · fan {_num(fan, 0)}%</div>"
+          f"<div class='sc-tag sc-hairline' style='color:{md_c}'>"
+          f"commanded now · {MODE_LABEL.get(md, md)}</div>"
+          f"<div class='sc-strip sc-thin'>{_strip(pl)}</div></div>"
+    )
+    st.markdown(
+        f"<div class='sc-stage'>{sky_layer(sky(now.timetuple().tm_yday, secs / 3600.0))}"
+        f"<div class='sc-wrap'>"
+        f"<div>{dial('live', seconds_into_day=secs, caption=now.strftime('%a %d %b'), readout=now.strftime('%H:%M'), accent=BRASS)}</div>"
+        f"<div class='sc-stack'>{readouts}</div></div></div>",
+        unsafe_allow_html=True,
+    )
 
-# ── Measured now ─────────────────────────────────────────────────────────────
-st.markdown('### Measured now')
-g = st.columns(4)
-with g[0]:
-    gauge('Room temperature', _num(dev['temp']['value']), '°C',
-          'DHT11 · measured' if dev['temp']['value'] is not None else 'no sample yet',
-          '#7dffb3' if dev['temp']['value'] is not None else '#44525c')
-with g[1]:
-    gauge('Relative humidity', _num(dev['rh']['value'], 0), '%',
-          'DHT11 · measured' if dev['rh']['value'] is not None else 'no sample yet',
-          '#5fd0f3' if dev['rh']['value'] is not None else '#44525c')
-with g[2]:
-    gauge('Dew point', _num(dev['dew']['value']), '°C',
-          f"override at ≥ {config.DEW_POINT_UNCOMFORTABLE:g} °C" if dev['dew']['value'] is not None
-          else 'no sample yet',
-          '#a7f3d0' if dev['dew']['value'] is not None else '#44525c')
-with g[3]:
-    fan = dev['fan_duty']['value'] if dev['fan_duty']['value'] is not None else payload['modelled']['fan_pwm']['value']
-    gauge('Fan duty', _num(fan, 0), '%',
-          'device reported' if dev['fan_duty']['value'] is not None else 'commanded',
-          '#f0c674')
 
-st.markdown(
-    f"<div class='sc-mode' style='border-left-color:{mode_c};color:{mode_c}'>{MODE_LABEL.get(mode, mode)}"
-    f"<span style='font-size:0.8rem;color:#8aa0ad;margin-left:0.8rem'>"
-    f"{payload['modelled']['reason']['value']}</span></div>",
-    unsafe_allow_html=True,
-)
-strip = ''.join(
-    f"<div style='background:{MODE_COLOR.get(r['actual_mode'], '#444')};"
-    f"opacity:{1 if r['now'] else 0.45}'></div>" for r in payload['ribbon']
-)
-st.markdown(f"<div class='sc-strip'>{strip}</div>", unsafe_allow_html=True)
+now_band()
 
-# ── Context the sensors are being judged against ─────────────────────────────
-c = st.columns(4)
-with c[0]:
-    gauge('Outdoor temp', _num(payload['replayed']['outdoor_temp']['value']), '°C', 'replayed schedule', '#e07a5f')
-with c[1]:
-    gauge('Outdoor dew', _num(payload['replayed']['outdoor_dew']['value']), '°C', 'replayed schedule', '#c98f6b')
-with c[2]:
-    gauge('Indoor model', _num(payload['modelled']['indoor_temp_est_c']['value']), '°C',
-          f"comfort cap {config.COMFORT_T_MAX:g} °C", '#7eb6ff')
-with c[3]:
-    gauge('kWh saved today', _num(payload['counters']['kwh_saved_net']['value'], 2), '',
-          'modelled cumulative', '#9fb3c0')
 
-# ── Live traces ──────────────────────────────────────────────────────────────
-st.markdown('### Live traces')
-if not hist:
-    st.caption('No packets recorded yet — traces draw themselves as the feed arrives.')
-else:
-    hdf = pd.DataFrame(hist)
-    hdf['t'] = pd.to_datetime(hdf.get('updated_unix'), unit='s', errors='coerce')
-    hdf = hdf.dropna(subset=['t']).sort_values('t')
-    sensor_rows = hdf[hdf[['temp', 'rh', 'dew']].notna().any(axis=1)] if 'temp' in hdf.columns else hdf.iloc[0:0]
-    plot_df = sensor_rows if len(sensor_rows) else hdf
+# ══ 2. THE PLAN ══════════════════════════════════════════════════════════════
+@st.fragment(run_every=1 if TICKING else None)
+def plan_band():
+    tel, _hist, _status, _live_dev = _live()
+    s_hour, s_date, pl = _slot(tel, advance=True)
+    md = pl['modelled']['actual_mode']['value']
+    md_c = MODE_COLOR.get(md, '#889')
+    sim_sky = sky(_date.fromisoformat(s_date).timetuple().tm_yday, s_hour + 0.5)
+    plan_plates = (
+        f"<div class='sc-plate sc-lead'><div class='sc-lbl'>Mode · hour {s_hour:02d}:00</div>"
+        f"<div class='sc-mode' style='color:{md_c};margin-top:.45rem'>{MODE_LABEL.get(md, md)}</div>"
+        f"<div class='sc-note'>{pl['modelled']['reason']['value']}</div>"
+        f"<div class='sc-strip'>{_strip(pl)}</div></div>"
+        + "<div class='sc-row2'>"
+        + plate('Outdoor', _num(pl['replayed']['outdoor_temp']['value']), '°C',
+                f"dew {_num(pl['replayed']['outdoor_dew']['value'])} °C · replayed", 'sc-lg')
+        + plate('Indoor model', _num(pl['modelled']['indoor_temp_est_c']['value']), '°C',
+                f"comfort cap {config.COMFORT_T_MAX:g} °C · modelled", 'sc-lg')
+        + "</div>"
+        + "<div class='sc-row2'>"
+        + plate('Saved so far', _num(pl['counters']['kwh_saved_net']['value'], 2), 'kWh',
+                'modelled, cumulative to this hour', 'sc-md')
+        + plate('Peak kWh cut', _num(pl['counters']['peak_kwh_cut']['value'], 2), 'kWh',
+                f"tariff peak {config.PEAK_HOURS[0]:02d}:00–{config.PEAK_HOURS[-1]:02d}:59", 'sc-md')
+        + "</div>"
+    )
+    st.markdown(
+        f"<div class='sc-stage sc-short'>{sky_layer(sim_sky, 'simulated day · ' + s_date)}"
+        f"<div class='sc-wrap'>"
+        f"<div>{dial('step', hour=s_hour, caption=scenario_name or 'planned day', readout=f'{s_hour:02d}:00', accent=md_c)}</div>"
+        f"<div class='sc-stack'>{plan_plates}</div></div></div>",
+        unsafe_allow_html=True,
+    )
 
-    t1, t2, t3 = st.columns(3)
-    with t1:
-        spark(plot_df, 'temp', '#7dffb3', 'Room temperature (°C)', '°C',
-              extra=[('indoor model', 'indoor_temp_est_c', '#7eb6ff')])
-    with t2:
-        spark(plot_df, 'rh', '#5fd0f3', 'Relative humidity (%)', '%')
-    with t3:
-        spark(plot_df, 'dew', '#a7f3d0', 'Dew point (°C)', '°C')
 
-    t4, t5 = st.columns([2, 1])
-    with t4:
-        spark(hdf, 'fan_pwm', '#f0c674', 'Fan duty (%) with outdoor temperature', '%',
-              extra=[('outdoor °C', 'outdoor_temp', '#e07a5f')])
-    with t5:
-        if 'actual_mode' in hdf.columns:
-            counts = hdf['actual_mode'].value_counts()
-            fig = go.Figure(go.Bar(
-                x=counts.values, y=[MODE_LABEL.get(m, m) for m in counts.index], orientation='h',
-                marker_color=[MODE_COLOR.get(m, '#555') for m in counts.index]))
-            fig.update_layout(height=170, margin=dict(l=90, r=12, t=28, b=28),
-                              paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.015)',
-                              font_color='#9fb3c0', font_size=11,
-                              title=dict(text='Packets per mode', font_size=12),
-                              xaxis=dict(gridcolor='rgba(255,255,255,0.06)'), yaxis=dict(showgrid=False))
-            st.plotly_chart(fig, width='stretch')
+plan_band()
 
-    # ── Session statistics ───────────────────────────────────────────────────
-    st.markdown('### Session statistics')
-    rows = []
-    for key, label, unit in (('temp', 'Room temperature', '°C'), ('rh', 'Relative humidity', '%'),
-                             ('dew', 'Dew point', '°C'), ('fan_pwm', 'Fan duty', '%'),
-                             ('outdoor_temp', 'Outdoor temperature', '°C'),
-                             ('indoor_temp_est_c', 'Indoor model', '°C')):
-        if key in hdf.columns and hdf[key].notna().any():
-            s = pd.to_numeric(hdf[key], errors='coerce').dropna()
-            rows.append({'signal': label, 'unit': unit, 'samples': int(s.size),
-                         'min': round(s.min(), 2), 'mean': round(s.mean(), 2),
-                         'max': round(s.max(), 2), 'latest': round(s.iloc[-1], 2)})
-    if rows:
-        st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
+# ══ 3. SAVINGS ═══════════════════════════════════════════════════════════════
+st.markdown("<div class='sc-section'><div class='sc-h2'>What the shift bought</div>"
+            "<div class='sc-sub'>The demo day hour by hour, then the 29-day simulation totals. "
+            "Indoor temperature is modelled; the dataset is a synthetic sample.</div></div>",
+            unsafe_allow_html=True)
 
-    st.markdown('### Raw packet tail')
-    lines = []
-    for r in hist[-14:][::-1]:
-        ts = datetime.fromtimestamp(float(r.get('updated_unix') or 0)).strftime('%H:%M:%S')
-        src = (r.get('source') or '?')[:5]
-        lines.append(
-            f"{ts}  {src:<5}  h{int(r.get('sim_hour') or 0):02d}  {str(r.get('actual_mode') or '-'):<16} "
-            f"T={_num(r.get('temp'))}  RH={_num(r.get('rh'), 0)}  Dew={_num(r.get('dew'))} "
-            f"fan={_num(r.get('fan_pwm'), 0)}  ovr={r.get('override_source') or '-'}"
-        )
-    st.markdown(f"<div class='sc-feed'>{'<br>'.join(lines)}</div>", unsafe_allow_html=True)
+sec = st.container()
+with sec:
+    pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
+    with body:
+        c1, c2 = st.columns([1.55, 1])
+        with c1:
+            hours = [r['hour'] for r in rows]
+            base = [r['kwh_baseline'] for r in rows]
+            opt = [r['kwh_optimized'] for r in rows]
+            fig = figure(312, 'A/C load across the demo day (kWh per hour)', legend=True)
+            fig.add_vrect(x0=config.PEAK_HOURS[0] - 0.5, x1=config.PEAK_HOURS[-1] + 0.5,
+                          fillcolor='rgba(216,161,42,0.10)', line_width=0,
+                          annotation_text='tariff peak', annotation_position='top left',
+                          annotation_font=dict(size=10, color=BRASS))
+            fig.add_trace(go.Scatter(x=hours, y=base, name='baseline', mode='lines',
+                                     line=dict(color='#7d8b97', width=1.6, dash='dot')))
+            fig.add_trace(go.Scatter(x=hours, y=opt, name='SmartCool', mode='lines',
+                                     line=dict(color=BRASS, width=2.6), fill='tozeroy',
+                                     fillcolor='rgba(201,162,39,0.14)'))
+            fig.update_xaxes(dtick=3, title=None)
+            chart(fig)
 
-with st.expander('Decision trace for this hour'):
-    for line in payload.get('decision_trace', []):
-        st.text(line)
+            cum, run = [], 0.0
+            for r in rows:
+                run += r['kwh_baseline'] - r['kwh_optimized']
+                cum.append(run)
+            fig2 = figure(206, 'Cumulative kWh saved (modelled)')
+            fig2.add_trace(go.Scatter(x=hours, y=cum, mode='lines', line=dict(color=C_COOL, width=2.4),
+                                      fill='tozeroy', fillcolor='rgba(127,169,201,0.13)'))
+            fig2.add_hline(y=0, line=dict(color='rgba(255,255,255,0.22)', width=1))
+            fig2.update_xaxes(dtick=3)
+            chart(fig2)
+        with c2:
+            cost = kpi.get('cost_sar', {})
+            cond = kpi.get('condensate_L_day', {})
+            pay = kpi.get('payback_months', {})
+            led = [
+                ('Peak demand reduction', f"{kpi.get('peak_reduction_pct', 0):.1f} %"),
+                ('Net energy change', f"{kpi.get('energy_change_pct', 0):+.2f} %"),
+                ('Energy, open loop', f"{kpi.get('energy_change_open_loop_pct', 0):+.2f} %"),
+                ('Bill saving · time-of-use', f"{cost.get('saved_per_year_tou', 0):.0f} SAR/yr"),
+                ('Bill saving · flat tariff', f"{cost.get('saved_per_year_flat', 0):.0f} SAR/yr"),
+                ('CO₂ avoided', f"{kpi.get('co2_kg', {}).get('saved_per_year', 0):.0f} kg/yr"),
+                ('Condensate recovered', f"{cond.get('optimized', 0):.1f} L/day"),
+                ('Hours above comfort cap',
+                 f"{kpi.get('hours_above_limit', 0)} of {kpi.get('scope', {}).get('hours', 0)}"),
+                ('Warmest modelled indoor', f"{kpi.get('max_indoor_c', 0):.2f} °C"),
+                ('Payback · time-of-use', f"{pay.get('tou', 0):.1f} months"),
+            ]
+            st.markdown(
+                "<div class='sc-lbl' style='margin-bottom:.6rem'>29-day simulation</div>"
+                "<div class='sc-ledger'>"
+                + ''.join(f"<div><span>{k}</span><span>{v}</span></div>" for k, v in led)
+                + "</div>"
+                + f"<div class='sc-note' style='margin-top:.9rem'>Flat tariff today is "
+                  f"{config.TARIFF_FLAT_SAR} SAR/kWh, so the shift itself earns nothing there — "
+                  f"only the net kWh does.</div>",
+                unsafe_allow_html=True,
+            )
 
-if device_live or st.session_state.replaying:
-    time.sleep(1.0)
-    st.rerun()
+# ══ 4. SENSORS ═══════════════════════════════════════════════════════════════
+st.markdown("<div class='sc-section'><div class='sc-rule'></div></div>", unsafe_allow_html=True)
+st.markdown("<div class='sc-section'><div class='sc-h2'>Sensors</div>"
+            "<div class='sc-sub'>Everything the board has reported this session. "
+            "Empty until the DHT11 streams.</div></div>", unsafe_allow_html=True)
+
+# Five seconds, not one: the traces grow slowly enough that a slower tick costs nothing and
+# leaves the charts usable between redraws.
+@st.fragment(run_every=5 if TICKING else None)
+def sensor_band():
+    _tel, hist, status, _live_dev = _live()
+    pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
+    with body:
+        if not hist:
+            st.markdown(
+                "<div class='sc-plate'><div class='sc-lbl'>No samples recorded</div>"
+                "<div class='sc-note' style='margin-top:.5rem'>Traces, session statistics and the "
+                "packet tail draw themselves as the feed arrives. Start the bridge, or use "
+                "<code>python tools/fake_device_feed.py</code> to exercise the path without a board."
+                "</div></div>", unsafe_allow_html=True)
+        else:
+            hdf = pd.DataFrame(hist)
+            # to_datetime(unit='s') lands in UTC. The packet tail below stamps with
+            # fromtimestamp(), which is local, so leaving this naive put the traces three
+            # hours off the packets in the one section whose job is proving the feed honest.
+            hdf['t'] = (pd.to_datetime(hdf.get('updated_unix'), unit='s', errors='coerce', utc=True)
+                        .dt.tz_convert(LOCAL_TZ).dt.tz_localize(None))
+            hdf = hdf.dropna(subset=['t']).sort_values('t')
+            has = [c for c in ('temp', 'rh', 'dew') if c in hdf.columns]
+            srows = hdf[hdf[has].notna().any(axis=1)] if has else hdf.iloc[0:0]
+            pdf = srows if len(srows) else hdf
+
+            s1, s2, s3 = st.columns(3)
+            for col, (key, label, colr, extra) in zip(
+                (s1, s2, s3),
+                (('temp', 'Room temperature (°C)', C_WARM,
+                  ('indoor_temp_est_c', 'modelled indoor', C_MODEL)),
+                 ('rh', 'Relative humidity (%) · measured', C_COOL, None),
+                 ('dew', 'Dew point (°C) · measured', C_PALE, None)),
+            ):
+                with col:
+                    has_extra = bool(extra and extra[0] in pdf.columns and pdf[extra[0]].notna().any())
+                    f = figure(196, label, legend=has_extra)
+                    if key in pdf.columns and pdf[key].notna().any():
+                        f.add_trace(go.Scatter(x=pdf['t'], y=pdf[key], mode='lines',
+                                               line=dict(color=colr, width=2),
+                                               name='measured'))
+                    if has_extra:
+                        f.add_trace(go.Scatter(x=pdf['t'], y=pdf[extra[0]], mode='lines',
+                                               name=extra[1],
+                                               line=dict(color=extra[2], width=1.3, dash='dot')))
+                    chart(f)
+
+            s4, s5 = st.columns([1.7, 1])
+            with s4:
+                f = figure(206, 'Fan duty (%) against outdoor temperature', legend=True)
+                if 'fan_pwm' in hdf.columns:
+                    f.add_trace(go.Scatter(x=hdf['t'], y=hdf['fan_pwm'], mode='lines',
+                                           name='fan · measured',
+                                           line=dict(color=BRASS, width=2), fill='tozeroy',
+                                           fillcolor='rgba(201,162,39,0.10)'))
+                if 'outdoor_temp' in hdf.columns:
+                    f.add_trace(go.Scatter(x=hdf['t'], y=hdf['outdoor_temp'], mode='lines',
+                                           name='outdoor · replayed', yaxis='y2',
+                                           line=dict(color=C_CLAY, width=1.4, dash='dot')))
+                    f.update_layout(yaxis2=dict(overlaying='y', side='right', showgrid=False,
+                                                tickfont=dict(color=C_CLAY)))
+                chart(f)
+            with s5:
+                stat = []
+                for key, label, unit in (('temp', 'Room temp', '°C'), ('rh', 'Humidity', '%'),
+                                         ('dew', 'Dew point', '°C'), ('fan_pwm', 'Fan duty', '%')):
+                    if key in hdf.columns and hdf[key].notna().any():
+                        s = pd.to_numeric(hdf[key], errors='coerce').dropna()
+                        stat.append((label, f'{s.min():g} / {s.mean():.1f} / {s.max():g} {unit}'))
+                st.markdown(
+                    "<div class='sc-lbl' style='margin-bottom:.6rem'>Session min / mean / max · measured</div>"
+                    "<div class='sc-ledger'>"
+                    + ''.join(f"<div><span>{k}</span><span>{v}</span></div>" for k, v in stat)
+                    + f"<div><span>Samples</span><span>{status['samples']}</span></div></div>",
+                    unsafe_allow_html=True)
+
+            lines = []
+            for r in hist[-14:][::-1]:
+                ts = datetime.fromtimestamp(float(r.get('updated_unix') or 0)).strftime('%H:%M:%S')
+                lines.append(
+                    f"{ts}  {(r.get('source') or '?')[:5]:<5}  h{int(r.get('sim_hour') or 0):02d}  "
+                    f"{str(r.get('actual_mode') or '-'):<16} T={_num(r.get('temp'))}  "
+                    f"RH={_num(r.get('rh'), 0)}  dew={_num(r.get('dew'))}  "
+                    f"fan={_num(r.get('fan_pwm'), 0)}  ovr={r.get('override_source') or '-'}")
+            st.markdown("<div class='sc-lbl' style='margin:1rem 0 .5rem'>Raw packets</div>"
+                        f"<div class='sc-tty'>{'<br>'.join(lines)}</div>", unsafe_allow_html=True)
+
+
+sensor_band()
+
+# Outside the ticking fragments so opening it survives every redraw above.
+with st.container():
+    pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
+    with body:
+        with st.expander(f'Why hour {sim_hour:02d}:00 chose {MODE_LABEL.get(mode, mode)}'):
+            for line in payload.get('decision_trace', []):
+                st.text(line)

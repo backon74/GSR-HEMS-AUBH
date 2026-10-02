@@ -60,14 +60,27 @@ https://github.com/user-attachments/assets/2500ed41-5113-4c2d-bf1b-20d328dac2fd
 
 ## Dashboard
 
-Live view (replaces the old report-style Streamlit app):
+An instrument dial under a live sky, not a report:
 
 ```bash
 python pipeline.py                 # once: demo day + firmware artefacts
-streamlit run dashboard/app.py     # SIM clock; mode + climate; analytics grow hour by hour
+streamlit run dashboard/app.py
 ```
 
-A sensor console, not a report: feed health (LIVE / REPLAY / STALE / SENSOR FAULT, packet age, sample rate), the measured room temperature, humidity, dew point and fan duty, streaming traces against wall-clock time, per-signal session statistics, and the raw packet tail.
+![SmartCool console](dashboard/preview_ui.png)
+
+Four sections, top to bottom:
+
+| Section | Shows |
+| --- | --- |
+| **Now** | Wall-clock analog dial, the real sun over the site, and the live DHT11 room temperature, humidity and dew point |
+| **The plan** | The simulated demo day stepping hour by hour, with the mode it chose and why |
+| **What the shift bought** | The demo day's load curve against baseline, cumulative kWh saved, and the 29-day totals |
+| **Sensors** | Feed health, streaming traces, session statistics, raw packets |
+
+The sky is computed, not decorated. `dashboard/skyclock.py` solves solar declination and hour angle for `config.SITE_LAT / SITE_LON`, so sunrise lands at 05:10 and sunset at 18:40 on the demo date, the sun sits 82° up at noon, and every colour, the star field and the orb position follow that elevation. Watching the plan section is watching a day pass: dawn, bleached Gulf haze at noon, golden hour, then dark.
+
+![Golden hour, comfort override firing](dashboard/preview_day.png)
 
 The laptop paces the simulated hour (3 s, 5 s in the tariff peak) and the ESP32 only senses and executes; it reads the DHT about once a second and streams every sample:
 
@@ -75,7 +88,7 @@ The laptop paces the simulated hour (3 s, 5 s in the tariff peak) and the ESP32 
 python bridge/serial_bridge.py --port /dev/cu.usbserial-0001   # start before board power
 ```
 
-The bridge publishes each packet to `data/processed/live_telemetry.json` (+ `live_history.jsonl`) and the console fills in. With no board attached the sensor tiles stay empty by design; "Replay schedule" walks the planned day so the layout stays reviewable, and `python tools/fake_device_feed.py` emits stand-in DHT packets for console work (never used by the pipeline or the model).
+The bridge publishes each packet to `data/processed/live_telemetry.json` (+ `live_history.jsonl`) and the console fills in. With no board attached the measured tiles stay empty by design and read `waiting for the board`; "Replay the planned day" walks the schedule so the plan section still moves, and `python tools/fake_device_feed.py` emits stand-in DHT packets through the same path for console work (never used by the pipeline or the model).
 
 https://github.com/user-attachments/assets/895f52ad-5ef7-4272-af1a-7fa0557637e7
 

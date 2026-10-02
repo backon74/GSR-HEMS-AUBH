@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T20:30:00+00:00",
+  "title": "Design System: SmartCool Console",
+  "extensions": {
+    "colorMeta": {
+      "brass": { "role": "primary", "displayName": "Instrument Brass", "canonical": "#c9a227" },
+      "night-void": { "role": "neutral", "displayName": "Night Void", "canonical": "#05080b" },
+      "plate": { "role": "neutral", "displayName": "Plate Solid", "canonical": "#0d1217" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Mode Display", "purpose": "Commanded mode titles on THE PLAN." },
+      "readout": { "displayName": "Lead Readout", "purpose": "Room temperature hero value." },
+      "label": { "displayName": "Instrument Label", "purpose": "Uppercase plate captions and provenance." }
+    },
+    "shadows": [
+      { "name": "plate-lift", "value": "0 14px 30px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.07)", "purpose": "Instrument plates over sky." },
+      { "name": "nameplate", "value": "0 6px 16px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)", "purpose": "Engraved dial caption." },
+      { "name": "dial", "value": "drop-shadow(0 26px 44px rgba(0,0,0,0.55))", "purpose": "Bezel presence against sky." }
+    ],
+    "motion": [
+      { "name": "step-hand", "value": "420ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Simulated-hour dial step." },
+      { "name": "twinkle", "value": "4.5s ease-in-out infinite", "purpose": "Night star scale pulse." },
+      { "name": "feed-beat", "value": "2s ease-in-out infinite", "purpose": "Live feed status dot." }
+    ],
+    "breakpoints": [
+      { "name": "instrument-stack", "value": "1100px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Instrument Plate",
+      "kind": "card",
+      "refersTo": "instrument-plate",
+      "description": "Smoked graphite readout face with provenance note.",
+      "html": "<div class=\"ds-plate\"><div class=\"ds-lbl\">Room temperature</div><div class=\"ds-val\">24.0<u>°C</u></div><div class=\"ds-note\">DHT11 · measured</div></div>",
+      "css": ".ds-plate{background:rgba(12,17,21,0.92);border:1px solid rgba(255,255,255,0.14);border-radius:3px;box-shadow:0 14px 30px rgba(0,0,0,0.42),inset 0 1px 0 rgba(255,255,255,0.07);padding:0.9rem 1.15rem;color:#eef3f7;font-family:Archivo,system-ui,sans-serif}.ds-lbl{font-family:Azeret Mono,monospace;font-size:0.66rem;letter-spacing:0.17em;text-transform:uppercase;color:#9dabb6}.ds-val{font-family:Azeret Mono,monospace;font-weight:600;font-size:2.3rem;letter-spacing:-0.03em;margin-top:0.3rem}.ds-val u{font-size:0.4em;color:#b6c4cf;text-decoration:none;margin-left:0.22rem}.ds-note{font-family:Azeret Mono,monospace;font-size:0.66rem;color:#9dabb6;margin-top:0.42rem}"
+    },
+    {
+      "name": "Dial Nameplate",
+      "kind": "custom",
+      "refersTo": "dial-nameplate",
+      "description": "Engraved caption and digital readout under the bezel.",
+      "html": "<div class=\"ds-nameplate\"><span class=\"ds-cap\">Fri 02 Oct</span><span class=\"ds-read\">23:30</span></div>",
+      "css": ".ds-nameplate{display:inline-flex;align-items:baseline;gap:0.85rem;background:linear-gradient(180deg,#202830 0%,#141a20 100%);border:1px solid rgba(255,255,255,0.1);border-radius:2px;box-shadow:0 6px 16px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.08);padding:0.4rem 0.95rem}.ds-cap{font-family:Azeret Mono,monospace;font-size:0.64rem;letter-spacing:0.19em;text-transform:uppercase;color:#93a2ae}.ds-read{font-family:Azeret Mono,monospace;font-size:1.1rem;font-weight:600;color:#c9a227;letter-spacing:-0.02em}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Aneroid Station",
+    "overview": "SmartCool’s console is an instrument dial under a live Gulf sky. Colour comes from solar elevation over Dammam; smoked graphite plates and one brass accent carry the weather-station world. Judges-first, provenance always visible.",
+    "keyCharacteristics": [
+      "Full-bleed solar sky",
+      "372px dial with under-bezel nameplate",
+      "Room temperature dominant",
+      "Brass sole metal accent",
+      "Measured / modelled / replayed labels"
+    ],
+    "rules": [
+      { "name": "The Sky Owns Colour", "body": "Do not invent a second brand gradient.", "section": "colors" },
+      { "name": "The Provenance Rule", "body": "A number without measured / modelled / replayed does not ship.", "section": "colors" },
+      { "name": "The Measurement Face Rule", "body": "Monospace is for data and provenance only.", "section": "typography" }
+    ],
+    "dos": [
+      "Do label every value measured, modelled, or replayed.",
+      "Do derive sky colour from real solar elevation.",
+      "Do keep dial captions under the bezel."
+    ],
+    "donts": [
+      "Don't fill empty sensor tiles with modelled stand-ins.",
+      "Don't put AI or Cursor credits in git history.",
+      "Don't print labels inside the dial face."
+    ]
+  }
+}

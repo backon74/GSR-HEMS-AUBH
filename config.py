@@ -122,3 +122,9 @@ LIVE_TELEMETRY_PATH = os.path.join("data", "processed", "live_telemetry.json")
 LIVE_HISTORY_PATH = os.path.join("data", "processed", "live_history.jsonl")
 LIVE_TELEMETRY_STALE_S = 8.0              # treat DHT feed as offline if older than this
 DEMO_DAY_PATH = os.path.join("results", "demo_day.json")
+
+# ── Site (drives the dashboard sun position; dataset origin) ─────────────────
+SITE_LABEL = "Dammam · Eastern Province"
+SITE_LAT = 26.43                          # deg N
+SITE_LON = 50.10                          # deg E
+SITE_TZ_OFFSET_H = 3.0                    # AST, no DST
