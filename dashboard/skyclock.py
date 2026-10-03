@@ -324,7 +324,7 @@ header[data-testid="stHeader"] {
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
 [data-testid="stSidebar"] .stCaption {
   font-family: 'Azeret Mono', monospace !important;
-  font-size: 0.68rem !important; line-height: 1.45 !important;
+  font-size: 0.78rem !important; line-height: 1.45 !important;
   color: var(--sc-ink-3) !important; letter-spacing: 0.02em !important;
 }
 [data-testid="stSidebar"] [data-testid="stCode"],
@@ -334,7 +334,7 @@ header[data-testid="stHeader"] {
   border-radius: 3px !important;
   color: #9fb0bd !important;
   font-family: 'Azeret Mono', monospace !important;
-  font-size: 0.66rem !important;
+  font-size: 0.78rem !important;
 }
 [data-testid="stSidebar"] hr {
   border: 0 !important; border-top: 1px solid rgba(255,255,255,0.09) !important;
@@ -347,7 +347,7 @@ header[data-testid="stHeader"] {
   border-radius: 2px !important;
   color: var(--sc-ink) !important;
   font-family: 'Azeret Mono', monospace !important;
-  font-size: 0.66rem !important; letter-spacing: 0.12em !important;
+  font-size: 0.78rem !important; letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
   box-shadow: 0 6px 16px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08) !important;
 }
@@ -358,7 +358,7 @@ header[data-testid="stHeader"] {
 [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
 [data-testid="stSidebar"] label {
   font-family: 'Azeret Mono', monospace !important;
-  font-size: 0.64rem !important; letter-spacing: 0.16em !important;
+  font-size: 0.76rem !important; letter-spacing: 0.16em !important;
   text-transform: uppercase !important; color: var(--sc-ink-3) !important;
 }
 [data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] {
@@ -418,7 +418,7 @@ header[data-testid="stHeader"] {
 }
 .sc-skylabel {
   position: absolute; left: 2.4rem; bottom: 1.1rem; z-index: 3;
-  font-family: 'Azeret Mono', monospace; font-size: 0.7rem; letter-spacing: 0.16em;
+  font-family: 'Azeret Mono', monospace; font-size: 0.8rem; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--sc-ink-2);
 }
 .sc-skylabel span { color: var(--sc-ink-3); letter-spacing: 0.08em; }
@@ -444,7 +444,7 @@ header[data-testid="stHeader"] {
   padding: 0.4rem 0.95rem;
 }
 .sc-np-cap {
-  font-family: 'Azeret Mono', monospace; font-size: 0.64rem; letter-spacing: 0.19em;
+  font-family: 'Azeret Mono', monospace; font-size: 0.76rem; letter-spacing: 0.19em;
   text-transform: uppercase; color: #93a2ae;
 }
 .sc-np-read {
@@ -477,7 +477,7 @@ header[data-testid="stHeader"] {
 }
 .sc-plate.sc-lead { padding: 1.25rem 1.4rem 1.1rem; }
 .sc-lbl {
-  font-family: 'Azeret Mono', monospace; font-size: 0.66rem; letter-spacing: 0.17em;
+  font-family: 'Azeret Mono', monospace; font-size: 0.78rem; letter-spacing: 0.17em;
   text-transform: uppercase; color: var(--sc-ink-3);
 }
 .sc-val {
@@ -491,13 +491,13 @@ header[data-testid="stHeader"] {
             margin-left: 0.22rem; text-decoration: none; }
 .sc-val.sc-void { color: #46535e; }
 .sc-note {
-  font-family: 'Azeret Mono', monospace; font-size: 0.66rem; color: var(--sc-ink-3);
+  font-family: 'Azeret Mono', monospace; font-size: 0.78rem; color: var(--sc-ink-3);
   margin-top: 0.42rem; letter-spacing: 0.02em;
 }
 .sc-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
 .sc-tag {
   display: inline-flex; align-items: center; gap: 0.42rem;
-  font-family: 'Azeret Mono', monospace; font-size: 0.66rem; letter-spacing: 0.14em;
+  font-family: 'Azeret Mono', monospace; font-size: 0.78rem; letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 .sc-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
@@ -527,7 +527,7 @@ header[data-testid="stHeader"] {
   font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 1.6rem;
   letter-spacing: -0.025em; margin: 0 0 0.35rem;
 }
-.sc-sub { font-family: 'Azeret Mono', monospace; font-size: 0.72rem; color: var(--sc-ink-3);
+.sc-sub { font-family: 'Azeret Mono', monospace; font-size: 0.8rem; color: var(--sc-ink-3);
           margin-bottom: 1.5rem; letter-spacing: 0.02em; }
 .sc-rule { height: 1px; background: rgba(255,255,255,0.08); margin: 3.2rem 0 0; }
 .sc-ledger { border-top: 1px solid rgba(255,255,255,0.1); }
@@ -541,7 +541,7 @@ header[data-testid="stHeader"] {
   font-variant-numeric: tabular-nums; color: var(--sc-ink);
 }
 .sc-tty {
-  font-family: 'Azeret Mono', monospace; font-size: 0.7rem; color: #9fb0bd;
+  font-family: 'Azeret Mono', monospace; font-size: 0.8rem; color: #9fb0bd;
   background: #070b0e; border: 1px solid rgba(255,255,255,0.08); border-radius: 3px;
   padding: 0.8rem 0.95rem; overflow-x: auto; white-space: pre; line-height: 1.7;
 }
@@ -563,7 +563,7 @@ header[data-testid="stHeader"] {
   .sc-stack { width: 100%; gap: 0.55rem; }
   .sc-row2 { gap: 0.55rem; }
   .sc-section { padding: 2.4rem 1.1rem 0; }
-  .sc-skylabel { left: 1.1rem; bottom: 0.85rem; font-size: 0.62rem; }
+  .sc-skylabel { left: 1.1rem; bottom: 0.85rem; font-size: 0.72rem; }
 }
 @media (max-width: 640px) {
   /* Phone first viewport: clock + sky + temp + humidity must read without scrolling.
@@ -577,22 +577,22 @@ header[data-testid="stHeader"] {
   .sc-dial { max-width: 168px; }
   .sc-dialwrap { gap: 0.4rem; }
   .sc-nameplate { padding: 0.28rem 0.65rem; gap: 0.5rem; }
-  .sc-np-cap { font-size: 0.56rem; letter-spacing: 0.14em; }
+  .sc-np-cap { font-size: 0.7rem; letter-spacing: 0.14em; }
   .sc-np-read { font-size: 0.84rem; }
   .sc-val.sc-xl { font-size: 2.35rem; }
   .sc-val.sc-lg { font-size: 1.45rem; }
   .sc-val.sc-md { font-size: 1.15rem; }
   .sc-plate { padding: 0.55rem 0.75rem; box-shadow: 0 8px 18px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07); }
   .sc-plate.sc-lead { padding: 0.7rem 0.85rem 0.6rem; }
-  .sc-lbl { font-size: 0.58rem; letter-spacing: 0.14em; }
-  .sc-note { font-size: 0.58rem; margin-top: 0.28rem; }
+  .sc-lbl { font-size: 0.72rem; letter-spacing: 0.14em; }
+  .sc-note { font-size: 0.72rem; margin-top: 0.28rem; }
   .sc-stack { gap: 0.45rem; }
   .sc-row2 { gap: 0.45rem; }
   .sc-hairline { margin-top: 0.5rem; padding-top: 0.45rem; }
   .sc-mode { font-size: 1.35rem; }
   .sc-section { padding: 2rem 0.85rem 0; }
   .sc-h2 { font-size: 1.25rem; }
-  .sc-skylabel { left: 0.85rem; right: 0.85rem; bottom: 0.55rem; font-size: 0.56rem; }
+  .sc-skylabel { left: 0.85rem; right: 0.85rem; bottom: 0.55rem; font-size: 0.7rem; }
 }
 </style>
 """

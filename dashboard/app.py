@@ -45,6 +45,22 @@ C_WARM, C_COOL, C_PALE, C_MODEL, C_CLAY = '#e0a45c', '#7fa9c9', '#b9d4c9', '#6f9
 st.set_page_config(page_title='SmartCool Console', layout='wide',
                    initial_sidebar_state='collapsed')
 st.markdown(CSS, unsafe_allow_html=True)
+
+st.markdown("""<style>
+[data-baseweb="tab-list"] { gap: 0.4rem; padding: 0 2.4rem; max-width: 1480px; margin: 0 auto; border-bottom: 1px solid rgba(255,255,255,0.12); }
+button[data-baseweb="tab"] { height: 3.1rem; padding: 0 1.4rem; background: transparent; }
+button[data-baseweb="tab"] p { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.04em; }
+button[data-baseweb="tab"][aria-selected="true"] p { color: #c9a227; }
+[data-baseweb="tab-highlight"] { background: #c9a227 !important; height: 3px !important; }
+[data-baseweb="tab-border"] { display: none; }
+.sc-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; padding: .9rem 2.4rem 0; max-width: 1480px; margin: 0 auto;
+  font-family: 'Azeret Mono', monospace; font-size: .8rem; color: #b6c4cf; }
+.sc-legend i { display: inline-block; width: .8rem; height: .8rem; border-radius: 2px; margin-right: .5rem; vertical-align: -1px; }
+.sc-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 760px) { .sc-row3 { grid-template-columns: 1fr; } }
+.sc-legend-note { color: #9dabb6; }
+@media (max-width: 640px) { [data-baseweb="tab-list"], .sc-legend { padding-left: .85rem; padding-right: .85rem; } }
+</style>""", unsafe_allow_html=True)
 # Direction contract — kept in the emitted markup so it is auditable in the built page.
 st.markdown("""<!--
 THESIS: A thermostat's two facts are what time it is and how hot it is, so this console is an
@@ -198,17 +214,10 @@ with st.sidebar:
     st.code('python bridge/serial_bridge.py --port /dev/cu.usbserial-0001', language=None)
     st.caption('The laptop paces the simulated hour. The ESP32 reads the DHT about once a '
                'second and streams every sample.')
-    st.markdown('---')
-    if st.button('Stop replay' if st.session_state.replaying else 'Replay the planned day',
-                 width='stretch', disabled=device_live):
-        st.session_state.replaying = not st.session_state.replaying
-        st.session_state.replay_started = time.time()
-        st.rerun()
-    st.caption('Replay walks the schedule so the plan section moves without hardware. '
-               'Measured tiles stay empty — nothing is sensing yet.')
-    st.session_state.replay_slider = st.session_state.replay_hour
-    st.slider('Simulated hour', 0, 23, key='replay_slider', on_change=_on_replay_hour,
-              disabled=device_live or st.session_state.replaying)
+    st.caption('Replay and the simulated-hour slider now live in the Simulated time tab.')
+
+
+tab_live, tab_sim = st.tabs(['Live time', 'Simulated time'])
 
 # ══ 1. NOW ═══════════════════════════════════════════════════════════════════
 # Only the hero ticks. A page-wide rerun every second rebuilt the savings charts and
@@ -252,15 +261,13 @@ def now_band():
           f"<div class='sc-strip sc-thin'>{_strip(pl)}</div></div>"
     )
     st.markdown(
-        f"<div class='sc-stage'>{sky_layer(sky(now.timetuple().tm_yday, secs / 3600.0))}"
+        f"<div class='sc-stage'>{sky_layer(sky(now.timetuple().tm_yday, secs / 3600.0), 'real time · ' + config.SITE_LABEL)}"
         f"<div class='sc-wrap'>"
         f"<div>{dial('live', seconds_into_day=secs, caption=now.strftime('%a %d %b'), readout=now.strftime('%H:%M'), accent=BRASS)}</div>"
         f"<div class='sc-stack'>{readouts}</div></div></div>",
         unsafe_allow_html=True,
     )
 
-
-now_band()
 
 
 # ══ 2. THE PLAN ══════════════════════════════════════════════════════════════
@@ -275,7 +282,8 @@ def plan_band():
         f"<div class='sc-plate sc-lead'><div class='sc-lbl'>Mode · hour {s_hour:02d}:00</div>"
         f"<div class='sc-mode' style='color:{md_c};margin-top:.45rem'>{MODE_LABEL.get(md, md)}</div>"
         f"<div class='sc-note'>{pl['modelled']['reason']['value']}</div>"
-        f"<div class='sc-strip'>{_strip(pl)}</div></div>"
+        + (f"<div class='sc-tag' style='color:{BRASS};margin-top:.4rem'>SCENARIO · {scenario_name}</div>" if scenario_name else '')
+        + f"<div class='sc-strip'>{_strip(pl)}</div></div>"
         + "<div class='sc-row2'>"
         + plate('Outdoor', _num(pl['replayed']['outdoor_temp']['value']), '°C',
                 f"dew {_num(pl['replayed']['outdoor_dew']['value'])} °C · replayed", 'sc-lg')
@@ -292,85 +300,11 @@ def plan_band():
     st.markdown(
         f"<div class='sc-stage sc-short'>{sky_layer(sim_sky, 'simulated day · ' + s_date)}"
         f"<div class='sc-wrap'>"
-        f"<div>{dial('step', hour=s_hour, caption=scenario_name or 'planned day', readout=f'{s_hour:02d}:00', accent=md_c)}</div>"
+        f"<div>{dial('step', hour=s_hour, caption='simulated', readout=f'{s_hour:02d}:00', accent=md_c)}</div>"
         f"<div class='sc-stack'>{plan_plates}</div></div></div>",
         unsafe_allow_html=True,
     )
 
-
-plan_band()
-
-# ══ 3. SAVINGS ═══════════════════════════════════════════════════════════════
-st.markdown("<div class='sc-section'><div class='sc-h2'>What the shift bought</div>"
-            "<div class='sc-sub'>The demo day hour by hour, then the 29-day simulation totals. "
-            "Indoor temperature is modelled; the dataset is a synthetic sample.</div></div>",
-            unsafe_allow_html=True)
-
-sec = st.container()
-with sec:
-    pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
-    with body:
-        c1, c2 = st.columns([1.55, 1])
-        with c1:
-            hours = [r['hour'] for r in rows]
-            base = [r['kwh_baseline'] for r in rows]
-            opt = [r['kwh_optimized'] for r in rows]
-            fig = figure(312, 'A/C load across the demo day (kWh per hour)', legend=True)
-            fig.add_vrect(x0=config.PEAK_HOURS[0] - 0.5, x1=config.PEAK_HOURS[-1] + 0.5,
-                          fillcolor='rgba(216,161,42,0.10)', line_width=0,
-                          annotation_text='tariff peak', annotation_position='top left',
-                          annotation_font=dict(size=10, color=BRASS))
-            fig.add_trace(go.Scatter(x=hours, y=base, name='baseline', mode='lines',
-                                     line=dict(color='#7d8b97', width=1.6, dash='dot')))
-            fig.add_trace(go.Scatter(x=hours, y=opt, name='SmartCool', mode='lines',
-                                     line=dict(color=BRASS, width=2.6), fill='tozeroy',
-                                     fillcolor='rgba(201,162,39,0.14)'))
-            fig.update_xaxes(dtick=3, title=None)
-            chart(fig)
-
-            cum, run = [], 0.0
-            for r in rows:
-                run += r['kwh_baseline'] - r['kwh_optimized']
-                cum.append(run)
-            fig2 = figure(206, 'Cumulative kWh saved (modelled)')
-            fig2.add_trace(go.Scatter(x=hours, y=cum, mode='lines', line=dict(color=C_COOL, width=2.4),
-                                      fill='tozeroy', fillcolor='rgba(127,169,201,0.13)'))
-            fig2.add_hline(y=0, line=dict(color='rgba(255,255,255,0.22)', width=1))
-            fig2.update_xaxes(dtick=3)
-            chart(fig2)
-        with c2:
-            cost = kpi.get('cost_sar', {})
-            cond = kpi.get('condensate_L_day', {})
-            pay = kpi.get('payback_months', {})
-            led = [
-                ('Peak demand reduction', f"{kpi.get('peak_reduction_pct', 0):.1f} %"),
-                ('Net energy change', f"{kpi.get('energy_change_pct', 0):+.2f} %"),
-                ('Energy, open loop', f"{kpi.get('energy_change_open_loop_pct', 0):+.2f} %"),
-                ('Bill saving · time-of-use', f"{cost.get('saved_per_year_tou', 0):.0f} SAR/yr"),
-                ('Bill saving · flat tariff', f"{cost.get('saved_per_year_flat', 0):.0f} SAR/yr"),
-                ('CO₂ avoided', f"{kpi.get('co2_kg', {}).get('saved_per_year', 0):.0f} kg/yr"),
-                ('Condensate recovered', f"{cond.get('optimized', 0):.1f} L/day"),
-                ('Hours above comfort cap',
-                 f"{kpi.get('hours_above_limit', 0)} of {kpi.get('scope', {}).get('hours', 0)}"),
-                ('Warmest modelled indoor', f"{kpi.get('max_indoor_c', 0):.2f} °C"),
-                ('Payback · time-of-use', f"{pay.get('tou', 0):.1f} months"),
-            ]
-            st.markdown(
-                "<div class='sc-lbl' style='margin-bottom:.6rem'>29-day simulation</div>"
-                "<div class='sc-ledger'>"
-                + ''.join(f"<div><span>{k}</span><span>{v}</span></div>" for k, v in led)
-                + "</div>"
-                + f"<div class='sc-note' style='margin-top:.9rem'>Flat tariff today is "
-                  f"{config.TARIFF_FLAT_SAR} SAR/kWh, so the shift itself earns nothing there — "
-                  f"only the net kWh does.</div>",
-                unsafe_allow_html=True,
-            )
-
-# ══ 4. SENSORS ═══════════════════════════════════════════════════════════════
-st.markdown("<div class='sc-section'><div class='sc-rule'></div></div>", unsafe_allow_html=True)
-st.markdown("<div class='sc-section'><div class='sc-h2'>Sensors</div>"
-            "<div class='sc-sub'>Everything the board has reported this session. "
-            "Empty until the DHT11 streams.</div></div>", unsafe_allow_html=True)
 
 # Five seconds, not one: the traces grow slowly enough that a slower tick costs nothing and
 # leaves the charts usable between redraws.
@@ -460,12 +394,115 @@ def sensor_band():
                         f"<div class='sc-tty'>{'<br>'.join(lines)}</div>", unsafe_allow_html=True)
 
 
-sensor_band()
+with tab_live:
+    now_band()
+    st.markdown("<div class='sc-section'><div class='sc-h2'>Sensors</div>"
+                "<div class='sc-sub'>Everything the board has reported this session. "
+                "Empty until the DHT11 streams.</div></div>", unsafe_allow_html=True)
+    sensor_band()
 
-# Outside the ticking fragments so opening it survives every redraw above.
-with st.container():
-    pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
-    with body:
-        with st.expander(f'Why hour {sim_hour:02d}:00 chose {MODE_LABEL.get(mode, mode)}'):
-            for line in payload.get('decision_trace', []):
-                st.text(line)
+with tab_sim:
+    _c = kpi.get('cost_sar', {})
+    st.markdown("<div class='sc-section' style='padding-bottom:.4rem'>"
+                "<div class='sc-row3'>"
+                + plate('Peak demand cut', f"{kpi.get('peak_reduction_pct', 0):.1f}", '%',
+                        '29-day simulation · synthetic sample', 'sc-md', lead=True)
+                + plate('Warmest modelled room', f"{kpi.get('max_indoor_c', 0):.2f}", '°C',
+                        f"cap {config.COMFORT_T_MAX:g} °C · modelled", 'sc-md')
+                + plate('Bill saving per home', f"{_c.get('saved_per_year_tou', 0):.0f}", 'SAR/yr',
+                        f"time-of-use · {_c.get('saved_per_year_flat', 0):.0f} SAR/yr on today's flat tariff", 'sc-md')
+                + "</div></div>", unsafe_allow_html=True)
+    c_btn, c_sld = st.columns([1, 2])
+    with c_btn:
+        if st.button('Stop replay' if st.session_state.replaying else 'Replay the planned day',
+                     width='stretch', disabled=device_live):
+            st.session_state.replaying = not st.session_state.replaying
+            st.session_state.replay_started = time.time()
+            st.rerun()
+    with c_sld:
+        st.session_state.replay_slider = st.session_state.replay_hour
+        st.slider('Simulated hour', 0, 23, key='replay_slider', on_change=_on_replay_hour,
+                  disabled=device_live or st.session_state.replaying)
+        if device_live:
+            st.caption('The board is publishing, so it owns the simulated hour.')
+        elif st.session_state.replaying:
+            st.caption('Replay is running; stop it to move the slider by hand.')
+    plan_band()
+    st.markdown("<div class='sc-legend'>" + ''.join(
+        f"<span><i style='background:{MODE_COLOR[m]}'></i>{MODE_LABEL[m]}</span>" for m in MODE_COLOR)
+        + "<span class='sc-legend-note'>24 cells = hours 00 to 23; the lit cell is now</span></div>",
+        unsafe_allow_html=True)
+
+    # ══ 3. SAVINGS ═══════════════════════════════════════════════════════════════
+    st.markdown("<div class='sc-section'><div class='sc-h2'>What the shift bought</div>"
+                "<div class='sc-sub'>The demo day hour by hour, then the 29-day simulation totals. "
+                "Indoor temperature is modelled; the dataset is a synthetic sample.</div></div>",
+                unsafe_allow_html=True)
+
+    sec = st.container()
+    with sec:
+        pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
+        with body:
+            c1, c2 = st.columns([1.55, 1])
+            with c1:
+                hours = [r['hour'] for r in rows]
+                base = [r['kwh_baseline'] for r in rows]
+                opt = [r['kwh_optimized'] for r in rows]
+                fig = figure(312, 'A/C load across the demo day (kWh per hour)', legend=True)
+                fig.add_vrect(x0=config.PEAK_HOURS[0] - 0.5, x1=config.PEAK_HOURS[-1] + 0.5,
+                              fillcolor='rgba(216,161,42,0.10)', line_width=0,
+                              annotation_text='tariff peak', annotation_position='top left',
+                              annotation_font=dict(size=10, color=BRASS))
+                fig.add_trace(go.Scatter(x=hours, y=base, name='baseline', mode='lines',
+                                         line=dict(color='#7d8b97', width=1.6, dash='dot')))
+                fig.add_trace(go.Scatter(x=hours, y=opt, name='SmartCool', mode='lines',
+                                         line=dict(color=BRASS, width=2.6), fill='tozeroy',
+                                         fillcolor='rgba(201,162,39,0.14)'))
+                fig.update_xaxes(dtick=3, title=None)
+                chart(fig)
+
+                cum, run = [], 0.0
+                for r in rows:
+                    run += r['kwh_baseline'] - r['kwh_optimized']
+                    cum.append(run)
+                fig2 = figure(206, 'Cumulative kWh saved (modelled)')
+                fig2.add_trace(go.Scatter(x=hours, y=cum, mode='lines', line=dict(color=C_COOL, width=2.4),
+                                          fill='tozeroy', fillcolor='rgba(127,169,201,0.13)'))
+                fig2.add_hline(y=0, line=dict(color='rgba(255,255,255,0.22)', width=1))
+                fig2.update_xaxes(dtick=3)
+                chart(fig2)
+            with c2:
+                cost = kpi.get('cost_sar', {})
+                cond = kpi.get('condensate_L_day', {})
+                pay = kpi.get('payback_months', {})
+                led = [
+                    ('Peak demand reduction', f"{kpi.get('peak_reduction_pct', 0):.1f} %"),
+                    ('Net energy change', f"{kpi.get('energy_change_pct', 0):+.2f} %"),
+                    ('Energy, open loop', f"{kpi.get('energy_change_open_loop_pct', 0):+.2f} %"),
+                    ('Bill saving · time-of-use', f"{cost.get('saved_per_year_tou', 0):.0f} SAR/yr"),
+                    ('Bill saving · flat tariff', f"{cost.get('saved_per_year_flat', 0):.0f} SAR/yr"),
+                    ('CO₂ avoided', f"{kpi.get('co2_kg', {}).get('saved_per_year', 0):.0f} kg/yr"),
+                    ('Condensate recovered', f"{cond.get('optimized', 0):.1f} L/day"),
+                    ('Hours above comfort cap',
+                     f"{kpi.get('hours_above_limit', 0)} of {kpi.get('scope', {}).get('hours', 0)}"),
+                    ('Warmest modelled indoor', f"{kpi.get('max_indoor_c', 0):.2f} °C"),
+                    ('Payback · time-of-use', f"{pay.get('tou', 0):.1f} months"),
+                ]
+                st.markdown(
+                    "<div class='sc-lbl' style='margin-bottom:.6rem'>29-day simulation</div>"
+                    "<div class='sc-ledger'>"
+                    + ''.join(f"<div><span>{k}</span><span>{v}</span></div>" for k, v in led)
+                    + "</div>"
+                    + f"<div class='sc-note' style='margin-top:.9rem'>Flat tariff today is "
+                      f"{config.TARIFF_FLAT_SAR} SAR/kWh, so the shift itself earns nothing there — "
+                      f"only the net kWh does.</div>",
+                    unsafe_allow_html=True,
+                )
+
+    # Outside the ticking fragments so opening it survives every redraw above.
+    with st.container():
+        pad_l, body, pad_r = st.columns([0.055, 0.89, 0.055])
+        with body:
+            with st.expander(f'Why hour {sim_hour:02d}:00 chose {MODE_LABEL.get(mode, mode)}'):
+                for line in payload.get('decision_trace', []):
+                    st.text(line)
